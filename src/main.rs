@@ -4,11 +4,16 @@ use iced::keyboard;
 use iced::theme::{self, Theme};
 use iced::widget::pane_grid::{self, PaneGrid};
 use iced::widget::{button, column, container, row, scrollable, text};
-use iced::{
-    Application, Color, Command, Element, Length, Settings, Size, Subscription,
-};
+use iced::{Application, Color, Command, Element, Length, Settings, Size, Subscription};
 use iced_lazy::responsive;
 use iced_native::{event, subscription, Event};
+
+pub mod generators;
+
+use generators::drivetrain;
+
+use crate::drivetrain::drivetrain::Drivetrain;
+use generators::motors::core_hd::CoreHD;
 
 pub fn main() -> iced::Result {
     Example::run(Settings::default())
@@ -18,6 +23,7 @@ struct Example {
     panes: pane_grid::State<Pane>,
     panes_created: usize,
     focus: Option<pane_grid::Pane>,
+    drivetrain: Drivetrain,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -49,6 +55,13 @@ impl Application for Example {
                 panes,
                 panes_created: 1,
                 focus: None,
+                drivetrain: Drivetrain {
+                    motors: vec![Box::new(CoreHD {
+                        direction: generators::motors::motor::MotorDirection::FORWARD,
+                        max_speed: 100.0,
+                        position: 0,
+                    })],
+                },
             },
             Command::none(),
         )
@@ -61,11 +74,7 @@ impl Application for Example {
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::Split(axis, pane) => {
-                let result = self.panes.split(
-                    axis,
-                    &pane,
-                    Pane::new(self.panes_created),
-                );
+                let result = self.panes.split(axis, &pane, Pane::new(self.panes_created));
 
                 if let Some((pane, _)) = result {
                     self.focus = Some(pane);
@@ -75,11 +84,7 @@ impl Application for Example {
             }
             Message::SplitFocused(axis) => {
                 if let Some(pane) = self.focus {
-                    let result = self.panes.split(
-                        axis,
-                        &pane,
-                        Pane::new(self.panes_created),
-                    );
+                    let result = self.panes.split(axis, &pane, Pane::new(self.panes_created));
 
                     if let Some((pane, _)) = result {
                         self.focus = Some(pane);
@@ -90,9 +95,7 @@ impl Application for Example {
             }
             Message::FocusAdjacent(direction) => {
                 if let Some(pane) = self.focus {
-                    if let Some(adjacent) =
-                        self.panes.adjacent(&pane, direction)
-                    {
+                    if let Some(adjacent) = self.panes.adjacent(&pane, direction) {
                         self.focus = Some(adjacent);
                     }
                 }
@@ -103,16 +106,12 @@ impl Application for Example {
             Message::Resized(pane_grid::ResizeEvent { split, ratio }) => {
                 self.panes.resize(&split, ratio);
             }
-            Message::Dragged(pane_grid::DragEvent::Dropped {
-                pane,
-                target,
-            }) => {
+            Message::Dragged(pane_grid::DragEvent::Dropped { pane, target }) => {
                 self.panes.swap(&pane, &target);
             }
             Message::Dragged(_) => {}
             Message::TogglePin(pane) => {
-                if let Some(Pane { is_pinned, .. }) = self.panes.get_mut(&pane)
-                {
+                if let Some(Pane { is_pinned, .. }) = self.panes.get_mut(&pane) {
                     *is_pinned = !*is_pinned;
                 }
             }
@@ -127,11 +126,9 @@ impl Application for Example {
             }
             Message::CloseFocused => {
                 if let Some(pane) = self.focus {
-                    if let Some(Pane { is_pinned, .. }) = self.panes.get(&pane)
-                    {
+                    if let Some(Pane { is_pinned, .. }) = self.panes.get(&pane) {
                         if !is_pinned {
-                            if let Some((_, sibling)) = self.panes.close(&pane)
-                            {
+                            if let Some((_, sibling)) = self.panes.close(&pane) {
                                 self.focus = Some(sibling);
                             }
                         }
@@ -166,11 +163,9 @@ impl Application for Example {
         let pane_grid = PaneGrid::new(&self.panes, |id, pane, is_maximized| {
             let is_focused = focus == Some(id);
 
-            let pin_button = button(
-                text(if pane.is_pinned { "Unpin" } else { "Pin" }).size(14),
-            )
-            .on_press(Message::TogglePin(id))
-            .padding(3);
+            let pin_button = button(text(if pane.is_pinned { "Unpin" } else { "Pin" }).size(14))
+                .on_press(Message::TogglePin(id))
+                .padding(3);
 
             let title = row![
                 pin_button,
@@ -184,12 +179,7 @@ impl Application for Example {
             .spacing(5);
 
             let title_bar = pane_grid::TitleBar::new(title)
-                .controls(view_controls(
-                    id,
-                    total_panes,
-                    pane.is_pinned,
-                    is_maximized,
-                ))
+                .controls(view_controls(id, total_panes, pane.is_pinned, is_maximized))
                 .padding(10)
                 .style(if is_focused {
                     style::title_bar_focused
@@ -198,7 +188,7 @@ impl Application for Example {
                 });
 
             pane_grid::Content::new(responsive(move |size| {
-                view_content(id, total_panes, pane.is_pinned, size)
+                view_content(id, total_panes, pane.is_pinned, size, &self.drivetrain)
             }))
             .title_bar(title_bar)
             .style(if is_focused {
@@ -272,6 +262,7 @@ fn view_content<'a>(
     total_panes: usize,
     is_pinned: bool,
     size: Size,
+    drivetrain: &Drivetrain,
 ) -> Element<'a, Message> {
     let button = |label, message| {
         button(
@@ -293,16 +284,25 @@ fn view_content<'a>(
         button(
             "Split vertically",
             Message::Split(pane_grid::Axis::Vertical, pane),
-        )
+        ),
+        text({
+            let test/* : Option<&Box<dyn generators::motors::motor::Motor>>*/ =
+                drivetrain.motors.iter().nth(0);
+                
+            //let test2: std::boxed::Box<dyn generators::motors::motor::Motor> = *test;
+            
+            match test {
+               Some(b) => (**b).generate().unwrap(),
+               None    => "None".to_string()
+            }
+        })
     ]
     .spacing(5)
     .max_width(150);
 
     if total_panes > 1 && !is_pinned {
-        controls = controls.push(
-            button("Close", Message::Close(pane))
-                .style(theme::Button::Destructive),
-        );
+        controls =
+            controls.push(button("Close", Message::Close(pane)).style(theme::Button::Destructive));
     }
 
     let content = column![
