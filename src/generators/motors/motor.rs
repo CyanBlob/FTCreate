@@ -8,12 +8,5 @@ pub enum MotorDirection {
     REVERSE
 }
 
+pub trait MotorGenerator: Motor + Generator {}
 pub trait Motor {}
-
-/*impl<T> Generator for T
-where
-    T: Motor,
-{
-    fn generate(&self) {
-    }
-}*/

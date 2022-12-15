@@ -1,3 +1,4 @@
+use crate::generators::generator::Generator;
 use iced::alignment::{self, Alignment};
 use iced::executor;
 use iced::keyboard;
@@ -23,7 +24,7 @@ struct Example {
     panes: pane_grid::State<Pane>,
     panes_created: usize,
     focus: Option<pane_grid::Pane>,
-    drivetrain: Drivetrain,
+    drivetrain: Drivetrain<CoreHD>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -262,7 +263,7 @@ fn view_content<'a>(
     total_panes: usize,
     is_pinned: bool,
     size: Size,
-    drivetrain: &Drivetrain,
+    drivetrain: &Drivetrain::<CoreHD>,
 ) -> Element<'a, Message> {
     let button = |label, message| {
         button(

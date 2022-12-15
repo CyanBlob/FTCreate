@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
@@ -17,10 +15,28 @@ pub struct CoreHD {
     pub position: u8
 }
 
-impl Motor for CoreHD {}
-
 impl generator::Generator for CoreHD {
     fn generate(&self) -> Result<String> {
         serde_json::to_string_pretty(self)
     }
+
+    fn serialize(&self) -> Result<String> {
+        serde_json::to_string_pretty(self)
+    }
+
+    fn deserialize(&self, json: &str) -> Result<Box::<Self>> {
+        match serde_json::from_str::<Self>(json) {
+            Ok(s) => {
+                Ok(Box::new(s))
+            }
+            Err(e) => {
+                Err(e)
+            }
+            
+        }
+    }
 }
+
+impl Motor for CoreHD {}
+
+impl MotorGenerator for CoreHD {}

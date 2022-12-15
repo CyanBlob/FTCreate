@@ -1,7 +1,6 @@
 //use crate::generators::drivetrain;
 //use crate::generators::motors;
-use crate::generators::motors::motor::Motor;
-use super::super::generator;
+use crate::generators::motors::motor::MotorGenerator;
 
 #[cfg(allow_unused)]
 enum DrivetrainType {
@@ -11,6 +10,6 @@ enum DrivetrainType {
     ARCADE
 }
 
-pub struct Drivetrain {
-    pub motors: Vec::<Box<dyn generator::Generator>>,
+pub struct Drivetrain <T: MotorGenerator> {
+    pub motors: Vec::<Box::<T>>,
 }
