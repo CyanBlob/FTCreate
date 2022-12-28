@@ -1,14 +1,17 @@
 [package]
-name = "ftc_generator"
+name = "easy_ftc"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-iced = "0.5"
-iced_native = "0.6.1"
-iced_lazy = "0.2.0"
 ftc_http = "2"
 serde = "1.0.150"
 serde_json = "1.0.89"
+druid  = {git = "https://github.com/linebender/druid.git", features = ["im"], rev = "fc05e965c85fced8720c655685e02478e0530e94"}
+druid-widget-nursery = { git = "https://github.com/linebender/druid-widget-nursery", rev = "cad6bcb"}
+
+#[patch.'https://github.com/linebender/druid'.druid]
+#git = "https://github.com/linebender/druid"
+#rev = "fc05e965c85fced8720c655685e02478e0530e94" # update this when upgrading to newer druid
