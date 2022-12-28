@@ -6,9 +6,11 @@ use super::super::generator;
 
 use crate::generators::motors;
 
+use druid::Data;
+
 use motor::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, Data, PartialEq, PartialOrd)]
 pub struct CoreHD {
     pub direction: motors::motor::MotorDirection,
     pub max_speed: f32,
