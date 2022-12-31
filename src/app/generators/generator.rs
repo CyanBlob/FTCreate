@@ -1,5 +1,3 @@
-use druid::Widget;
-
 pub trait Generator {
     fn generate(&self) -> Result<String, serde_json::error::Error>;
 
@@ -7,5 +5,5 @@ pub trait Generator {
 
     fn deserialize(&self, json: &str) -> Result<Box::<Self>, serde_json::error::Error>;
 
-    fn render_options(&self) -> Box::<dyn Widget<Self>>;
+    fn render_options(&mut self, ui: &mut egui::Ui);
 }

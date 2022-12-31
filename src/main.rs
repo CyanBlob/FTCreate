@@ -1,95 +1,38 @@
-use crate::generators::generator::Generator;
-pub mod generators;
+#![warn(clippy::all, rust_2018_idioms)]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-use generators::drivetrain;
-use generators::motors::motor::MotorGenerator;
+// When compiling natively:
+#[cfg(not(target_arch = "wasm32"))]
+fn main() {
+    // Log to stdout (if you run with `RUST_LOG=debug`).
+    tracing_subscriber::fmt::init();
 
-use crate::drivetrain::drivetrain::Drivetrain;
-use druid::widget::{Button, Flex, Label, Padding, List, ViewSwitcher, Container};
-use druid::{AppLauncher, Data, PlatformError, Widget, WindowDesc, Lens, WidgetExt, LensExt};
-use generators::motors::core_hd::CoreHD;
-
-#[derive(Clone, Debug, Data, Lens)]
-struct AppState {
-    drivetrain: Drivetrain<CoreHD>,
-    drivetrain_speed: f64
+    let native_options = eframe::NativeOptions::default();
+    eframe::run_native(
+        "Easy FTC",
+        native_options,
+        Box::new(|cc| Box::new(easy_ftc::TemplateApp::new(cc))),
+    );
 }
 
+// when compiling to web using trunk.
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    // Make sure panics are logged using `console.error`.
+    console_error_panic_hook::set_once();
 
-fn build_ui() -> impl Widget<AppState> {
-    Padding::new(
-        00.0,
-        Flex::column()
-            .with_flex_child(Label::new("Motors"), 1.0)
-            .with_flex_child(render_generator::<CoreHD>(), 1.0)
-            .with_flex_child(Button::new("Update").on_click(|_, data, _| {
-                println!("{:?}", data);
-            }), 1.0)
-    )
-}
+    // Redirect tracing to console.log and friends:
+    tracing_wasm::set_as_global_default();
 
-fn render_generator<T: MotorGenerator>() -> impl Widget<AppState> {
-    Flex::column().with_flex_child(
-        List::new(|| {
-            Container::new(
-                ViewSwitcher::new(|_data: &CoreHD, _| {
-                    0
-                }
-                    , |_selector, data, _env| {
-                        println!("RENDERING {:?}", data);
-                        Box::new(data.render_options())
-                    }).fix_size(500.0, 125.0)
-                )
-        }).lens(AppState::drivetrain.then(Drivetrain::motors)) , 1.0)
-}
+    let web_options = eframe::WebOptions::default();
 
-/*fn render_motors() -> impl Widget<AppState> {
-            Container::new(
-                ViewSwitcher::new(|_data: &Drivetrain<CoreHD>, _| {
-                    0
-                }
-                    , |_selector, data, _env| {
-                        println!("RENDERING {:?}", data);
-
-                let mut column = Flex::column();
-
-                data.motors.iter().for_each(|motor| {
-                    column.add_child(
-                    //Label::new("TEST")
-                    motor.render_options()
-                    )
-                });
-
-                Box::new(data.render())
-                //Box::new(Label::new("TEST"))
-                        //data.motors.iter().nth(0).unwrap().render_options()
-                
-                    }).fix_size(500.0, 50.0)
-                ).border(Color::AQUA, 1.0)
-}*/
-
-fn main() -> Result<(), PlatformError> {
-    let state = AppState {
-        drivetrain: //Rc::new(
-        Drivetrain {
-            motors: //Rc::new(
-            druid::im::vector![CoreHD {
-                direction: generators::motors::motor::MotorDirection::FORWARD,
-                max_speed: 0.75,
-                position: 0,
-            },
-                CoreHD {
-                    direction: generators::motors::motor::MotorDirection::REVERSE,
-                    max_speed: -1.0,
-                    position: 0,
-                }
-            ],
-            //),
-        },
-        drivetrain_speed: 0.0,
-    };
-    AppLauncher::with_window(WindowDesc::new(build_ui()))
-        //.log_to_console()
-        .launch(state)?;
-    Ok(())
+    wasm_bindgen_futures::spawn_local(async {
+        eframe::start_web(
+            "the_canvas_id", // hardcode it
+            web_options,
+            Box::new(|cc| Box::new(easy_ftc::TemplateApp::new(cc))),
+        )
+        .await
+        .expect("failed to start eframe");
+    });
 }

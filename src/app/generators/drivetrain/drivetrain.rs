@@ -1,6 +1,4 @@
-use crate::generators::motors::motor::MotorGenerator;
-use druid::{Data, Lens};
-use druid::im::Vector;
+use crate::app::generators::motors::motor::MotorGenerator;
 
 #[cfg(allow_unused)]
 enum DrivetrainType {
@@ -11,10 +9,9 @@ enum DrivetrainType {
 }
 
 // TODO: vecs should be wrapped in Rc (or use Im vecs?)
-#[derive(Debug, Clone, Data, PartialEq, Lens)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Drivetrain<T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone> {
-    #[data(same_fn = "PartialEq::eq")]
-    pub motors: Vector<T>,
+    pub motors: Vec<T>,
 }
 
 //impl<T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone + druid::Data> Drivetrain<T> {

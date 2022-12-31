@@ -1,9 +1,8 @@
 use serde::{Serialize, Deserialize};
 
-use crate::generators::generator::Generator;
-use druid::Data;
+use crate::app::generators::generator::Generator;
 
-#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, Data, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord)]
 pub enum MotorDirection {
     FORWARD,
     REVERSE
