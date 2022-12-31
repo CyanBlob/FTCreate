@@ -23,6 +23,7 @@ serde = { version = "1", features = ["derive"] }
 
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
+enum-map = { version = "2", features = ["serde"] }
 
 
 # native:

@@ -7,6 +7,9 @@ use generators::motors::motor::MotorGenerator;
 use crate::app::drivetrain::drivetrain::Drivetrain;
 use generators::motors::core_hd::CoreHD;
 
+pub mod syntax_highlighting;
+
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -149,7 +152,8 @@ impl eframe::App for TemplateApp {
             ui.heading("Generated code");
 
             ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                ui.add_sized(ui.available_size(), egui::TextEdit::multiline(&mut self.code.to_string()));
+                //ui.add_sized(ui.available_size(), egui::TextEdit::multiline(&mut self.code.to_string()));
+                show_code(ui, &self.code);
             });
 
 
@@ -176,4 +180,31 @@ impl eframe::App for TemplateApp {
             });
         }
     }
+}
+
+fn show_code(ui: &mut egui::Ui, code: &str) {
+    let code = remove_leading_indentation(code.trim_start_matches('\n'));
+    crate::app::syntax_highlighting::code_view_ui(ui, &code);
+}
+
+fn remove_leading_indentation(code: &str) -> String {
+    fn is_indent(c: &u8) -> bool {
+        matches!(*c, b' ' | b'\t')
+    }
+
+    let first_line_indent = code.bytes().take_while(is_indent).count();
+
+    let mut out = String::new();
+
+    let mut code = code;
+    while !code.is_empty() {
+        let indent = code.bytes().take_while(is_indent).count();
+        let start = first_line_indent.min(indent);
+        let end = code
+            .find('\n')
+            .map_or_else(|| code.len(), |endline| endline + 1);
+        out += &code[start..end];
+        code = &code[end..];
+    }
+    out
 }
