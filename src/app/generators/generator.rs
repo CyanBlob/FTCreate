@@ -5,5 +5,5 @@ pub trait Generator {
 
     fn deserialize(&self, json: &str) -> Result<Box::<Self>, serde_json::error::Error>;
 
-    fn render_options(&mut self, ui: &mut egui::Ui);
+    fn render_options(&mut self, ui: &mut egui::Ui, id: usize);
 }

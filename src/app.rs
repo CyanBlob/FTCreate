@@ -32,16 +32,16 @@ impl Default for TemplateApp {
             Drivetrain {
                 motors: //Rc::new(
                 vec![CoreHD {
-                    direction: generators::motors::motor::MotorDirection::FORWARD,
+                    direction: generators::motors::motor::MotorDirection::Forward,
+                    mode: generators::motors::motor::MotorMode::RunToPosition,
                     max_speed: 0.75,
                     position: 0,
-                    reversed: false
                 },
                     CoreHD {
-                        direction: generators::motors::motor::MotorDirection::REVERSE,
+                        direction: generators::motors::motor::MotorDirection::Reverse,
+                        mode: generators::motors::motor::MotorMode::RunWithEncoders,
                         max_speed: -1.0,
                         position: 0,
-                        reversed: true
                     }
                 ],
                 //),
@@ -137,7 +137,12 @@ impl eframe::App for TemplateApp {
             self.drivetrain
                 .motors
                 .iter_mut()
-                .for_each(|motor| {motor.render_options(ui)});
+                .enumerate()
+                .for_each(|(id, motor)| {
+                    ui.add_space(20.0);
+                    ui.separator();
+                    motor.render_options(ui, id);
+                });
         });
 
         egui::SidePanel::right("code_panel").show(ctx, |ui| {

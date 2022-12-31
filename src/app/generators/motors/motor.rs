@@ -1,11 +1,20 @@
 use serde::{Serialize, Deserialize};
 
+use strum_macros::EnumIter;
+
 use crate::app::generators::generator::Generator;
 
-#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord)]
+#[derive(Copy, PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord, EnumIter)]
 pub enum MotorDirection {
-    FORWARD,
-    REVERSE
+    Forward,
+    Reverse
+}
+
+#[derive(Copy, PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord, EnumIter)]
+pub enum MotorMode {
+    RunToPosition,
+    RunWithEncoders,
+    RunWithoutEncoders
 }
 
 pub trait MotorGenerator: Motor + Generator {}
