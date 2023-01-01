@@ -5,7 +5,7 @@ use strum::IntoEnumIterator;
 use super::super::generator;
 use super::motor;
 
-use crate::app::generators::{motors, self};
+use crate::app::generators::{self, drivetrain::drivetrain::DrivetrainType, motors};
 
 use motor::*;
 
@@ -14,12 +14,13 @@ pub struct DcMotor {
     pub direction: motors::motor::MotorDirection,
     pub mode: motors::motor::MotorMode,
     pub max_speed: f64,
-    pub position: u8,
+    pub mecanum_position: motors::motor::MecanumPosition,
     pub name: String,
+    pub positions: Option<Vec<i32>>,
+    pub drivetrain_type: DrivetrainType,
 }
 
-impl DcMotor {
-}
+impl DcMotor {}
 
 impl generator::Generator for DcMotor {
     fn generate_includes(&self) -> String {
@@ -69,6 +70,7 @@ impl generator::Generator for DcMotor {
 
         ui.text_edit_singleline(&mut self.name);
 
+        // TODO: refactor into function
         ui.push_id(id, |ui| {
             egui::ComboBox::from_label("Run mode")
                 .selected_text(format!("{:?}", &mut self.mode))
@@ -114,6 +116,21 @@ impl generator::Generator for DcMotor {
                 self.max_speed = 0.0;
             }
         }
+
+        ui.add_space(20.0);
+
+        if self.drivetrain_type == DrivetrainType::Mecanum {
+            ui.push_id(id + 100, |ui| {
+                egui::ComboBox::from_label("Mecanum position")
+                    .selected_text(format!("{:?}", &mut self.mecanum_position))
+                    .width(170.0)
+                    .show_ui(ui, |ui| {
+                        for position in MecanumPosition::iter() {
+                            ui.selectable_value(&mut self.mecanum_position, position, format!("{:?}", position));
+                        }
+                    });
+            });
+        }
     }
 }
 
@@ -125,8 +142,18 @@ impl MotorGenerator for DcMotor {
             direction: generators::motors::motor::MotorDirection::FORWARD,
             mode: generators::motors::motor::MotorMode::RUN_TO_POSITION,
             max_speed: 1.0,
-            position: 0,
+            mecanum_position: MecanumPosition::FrontLeft,
             name: "Motor".to_string(),
+            positions: None,
+            drivetrain_type: DrivetrainType::Mecanum,
         }
+    }
+
+    fn set_drivetrain_type(&mut self, drivetrain_type: DrivetrainType) {
+        self.drivetrain_type = drivetrain_type;
+    }
+
+    fn set_mecanum_position(&mut self, position: MecanumPosition) {
+        self.mecanum_position = position;
     }
 }

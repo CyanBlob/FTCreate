@@ -6,6 +6,8 @@ use generators::drivetrain;
 use crate::app::drivetrain::drivetrain::Drivetrain;
 use generators::motors::dc_motor::DcMotor;
 
+use self::generators::{drivetrain::drivetrain::DrivetrainType, motors::motor::MecanumPosition};
+
 pub mod syntax_highlighting;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -29,25 +31,28 @@ impl Default for TemplateApp {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
-            drivetrain: //Rc::new(
-            Drivetrain {
-                motors: //Rc::new(
-                vec![DcMotor {
-                    direction: generators::motors::motor::MotorDirection::FORWARD,
-                    mode: generators::motors::motor::MotorMode::RUN_TO_POSITION,
-                    max_speed: 0.75,
-                    position: 0,
-                    name: "Motor1".to_string()
-                },
+            drivetrain: Drivetrain {
+                motors: vec![
+                    DcMotor {
+                        direction: generators::motors::motor::MotorDirection::FORWARD,
+                        mode: generators::motors::motor::MotorMode::RUN_TO_POSITION,
+                        max_speed: 0.75,
+                        mecanum_position: MecanumPosition::FrontLeft,
+                        name: "Motor1".to_string(),
+                        drivetrain_type: DrivetrainType::Mecanum,
+                        positions: None,
+                    },
                     DcMotor {
                         direction: generators::motors::motor::MotorDirection::REVERSE,
                         mode: generators::motors::motor::MotorMode::RUN_WITHOUT_ENCODERS,
                         max_speed: -1.0,
-                        position: 0,
-                        name: "Motor2".to_string()
-                    }
+                        mecanum_position: MecanumPosition::FrontRight,
+                        name: "Motor2".to_string(),
+                        drivetrain_type: DrivetrainType::Mecanum,
+                        positions: None,
+                    },
                 ],
-                //),
+                drivetrain_type: DrivetrainType::Mecanum,
             },
             code: "Click \"GENERATE!\"".to_string(),
         }
