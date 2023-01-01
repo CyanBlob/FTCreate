@@ -30,24 +30,24 @@ impl generator::Generator for DcMotor {
     }
     
     fn generate_globals(&self) -> String {
-        format!("\tprivate DcMotorEx {} = null;\n", &self.name)
+        format!("\t// {} globals\n\tprivate DcMotorEx {} = null;\n\n", &self.name, &self.name)
     }
     
     fn generate_init(&self) -> String {
-        format!("\t\t{} = hardwareMap.get(DcMotorEx.class, \"{}\");\n\n", &self.name, &self.name) + 
+        format!("\t\t// {} init\n\t\t{} = hardwareMap.get(DcMotorEx.class, \"{}\");\n\n", &self.name, &self.name, &self.name) + 
         &format!("\t\t{}.setDirection(DcMotor.Direction.{:?});\n\n", &self.name, &self.direction) +
         &format!("\t\t{}.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);\n", &self.name) +
         &format!("\t\t{}.setMode(DcMotor.RunMode.{:?});\n\n", &self.name, &self.mode)
     }
 
     fn generate_loop_one_time_setup(&self) -> String {
-        format!("\t\t\tdouble drive  = -gamepad1.left_stick_y*driveSpeed;  // forwards and backwards movement\n\
+        format!("\t\t\t//DC Motor one time setup\n\t\t\tdouble drive  = -gamepad1.left_stick_y*driveSpeed;  // forwards and backwards movement\n\
         \t\t\tdouble strafe =  -gamepad1.left_stick_x*driveSpeed;  // side to side movement\n\
         \t\t\tdouble turn   =  gamepad1.right_stick_x*turnSpeed; // rotation\n\n")
     }
     
     fn generate_loop(&self) -> String {
-        format!("\t\t\t{}.setPower(Range.clip(  drive - strafe + turn, -{}, {}));\n\n", &self.name, self.max_speed, self.max_speed)
+        format!("\t\t\t//{} loop\n\t\t\t{}.setPower(Range.clip(  drive - strafe + turn, -{}, {}));\n\n", &self.name, &self.name, self.max_speed, self.max_speed)
     }
 
     fn serialize(&self) -> Result<String> {
@@ -109,8 +109,8 @@ impl generator::Generator for DcMotor {
             if ui.button("Decrement").clicked() {
                 self.max_speed -= 0.1;
 
-                if self.max_speed < -max_speed {
-                    self.max_speed = -max_speed;
+                if self.max_speed < 0.0 {
+                    self.max_speed = 0.0;
                 }
             }
     }

@@ -87,7 +87,7 @@ impl TemplateApp {
             new_code += r#"@TeleOp(name="EasyFTC Teleop", group="Linear Opmode")"#;
             new_code += "\n";
             new_code += "public class EasyFTC_teleop extends LinearOpMode {\n\
-                \tprivate ElapsedTime runtime = new ElapsedTime();\n";
+                \tprivate ElapsedTime runtime = new ElapsedTime();\n\n";
 
         // globals
         self.drivetrain
@@ -96,10 +96,10 @@ impl TemplateApp {
             .for_each(|motor| new_code += &motor.generate_globals());
         
         new_code += "\n\t@Override\n\
-        \tpublic void runOpMode() {\n\
+        \tpublic void runOpMode() {\n\n\
             \t\ttelemetry.addData(\"Status\", \"Initialized\");\n\
             \t\ttelemetry.update();";
-        new_code += "\n";
+        new_code += "\n\n";
 
         // initializers
         self.drivetrain
@@ -164,7 +164,7 @@ impl eframe::App for TemplateApp {
             });
         });
 
-        egui::SidePanel::left("side_panel").show(ctx, |ui| {
+        /*egui::SidePanel::left("side_panel").show(ctx, |ui| {
             ui.heading("Side Panel");
 
             ui.horizontal(|ui| {
@@ -190,7 +190,7 @@ impl eframe::App for TemplateApp {
                     ui.label(".");
                 });
             });
-        });
+        });*/
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
