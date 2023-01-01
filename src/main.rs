@@ -9,7 +9,7 @@ fn main() {
 
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(
-        "Easy FTC",
+        "EasyFTC",
         native_options,
         Box::new(|cc| Box::new(easy_ftc::TemplateApp::new(cc))),
     );

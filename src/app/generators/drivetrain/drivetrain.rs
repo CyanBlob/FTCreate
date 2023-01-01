@@ -1,4 +1,4 @@
-use crate::app::generators::motors::motor::MotorGenerator;
+use crate::app::generators::{motors::{motor::MotorGenerator}, generator};
 
 #[cfg(allow_unused)]
 enum DrivetrainType {
@@ -14,42 +14,35 @@ pub struct Drivetrain<T: MotorGenerator + std::cmp::PartialEq + std::cmp::Partia
     pub motors: Vec<T>,
 }
 
-//impl<T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone + druid::Data> Drivetrain<T> {
-/*impl Drivetrain<CoreHD> {
-    pub fn render(&self) -> Box::<dyn Widget<AppState>> {
+impl<T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone> generator::Generator for Drivetrain<T> {
+    fn render_options(&mut self, ui: &mut egui::Ui, _id: usize) {
+        //ui.label("Drivetrain options");
+        ui.add_space(10.0);
+        
+        if ui.button("Add motor").clicked() {
+            self.motors.push(T::new());
+        }
 
-        let mut column = Flex::column();
-
-        self.motors.iter().for_each(|motor| {
-            column.add_child(motor.render_options());
-        });
-
-        let container = Container::new(column);
-        Box::new(container);
-
-        self.motors.iter().nth(0).unwrap().render_options()
-    }
-}*/
-
-/*impl<T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone> Widget<AppState> for Drivetrain<T> {
-    fn event(&mut self, ctx: &mut druid::EventCtx, event: &druid::Event, data: &mut AppState, env: &druid::Env) {
+        if ui.button("Remove motor").clicked() {
+            self.motors.pop();
+        }
+        
+            self
+                .motors
+                .iter_mut()
+                .enumerate()
+                .for_each(|(id, motor)| {
+                    ui.add_space(20.0);
+                    ui.separator();
+                    motor.render_options(ui, id);
+                });
         
     }
-
-    fn update(&mut self, ctx: &mut druid::UpdateCtx, old_data: &AppState, data: &AppState, env: &druid::Env) {
-       ctx.request_paint();
+    
+    fn generate_loop_one_time_setup(&self) -> String {
+        format!("\t\t\t// Drivetrain one time setup\n\t\t\tdouble drive  = -gamepad1.left_stick_y*driveSpeed;  // forwards and backwards movement\n\
+        \t\t\tdouble strafe = -gamepad1.left_stick_x*driveSpeed;  // side to side movement\n\
+        \t\t\tdouble turn   =  gamepad1.right_stick_x*turnSpeed;  // rotation\n\n")
     }
 
-    fn layout(&mut self, ctx: &mut druid::LayoutCtx, bc: &druid::BoxConstraints, data: &AppState, env: &druid::Env) -> druid::Size {
-        druid::Size { width: 200.0, height: 200.0 }
-        
-    }
-
-    fn paint(&mut self, ctx: &mut druid::PaintCtx, data: &AppState, env: &druid::Env) {
-       ctx. 
-    }
-
-    fn lifecycle(&mut self, ctx: &mut druid::LifeCycleCtx, event: &druid::LifeCycle, data: &AppState, env: &druid::Env) {
-        
-    }
-}*/
+}

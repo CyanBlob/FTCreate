@@ -19,9 +19,21 @@ pub trait Generator {
         "".to_string()
     }
 
-    fn serialize(&self) -> Result<String, serde_json::error::Error>;
+    fn serialize(&self) -> Result<String, serde_json::error::Error> where Self: serde::Serialize {
+        serde_json::to_string_pretty(self)
+    }
 
-    fn deserialize(&self, json: &str) -> Result<Box::<Self>, serde_json::error::Error>;
+    fn deserialize<'a>(&self, json: &'a str) -> Result<Box::<Self>, serde_json::error::Error> where Self: serde::Deserialize<'a> {
+        match serde_json::from_str::<Self>(json) {
+            Ok(s) => {
+                Ok(Box::new(s))
+            }
+            Err(e) => {
+                Err(e)
+            }
+            
+        }
+    }
     
     fn render_options(&mut self, ui: &mut egui::Ui, id: usize);
 }

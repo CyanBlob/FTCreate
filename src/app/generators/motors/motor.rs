@@ -18,5 +18,7 @@ pub enum MotorMode {
     RUN_WITHOUT_ENCODERS
 }
 
-pub trait MotorGenerator: Motor + Generator {}
+pub trait MotorGenerator: Motor + Generator {
+    fn new() -> Self;
+}
 pub trait Motor {}
