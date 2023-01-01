@@ -11,16 +11,43 @@ use crate::app::generators::motors;
 use motor::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-pub struct CoreHD {
+pub struct DcMotor {
     pub direction: motors::motor::MotorDirection,
     pub mode: motors::motor::MotorMode,
     pub max_speed: f64,
     pub position: u8,
+    pub name: String
 }
 
-impl generator::Generator for CoreHD {
-    fn generate(&self) -> Result<String> {
-        serde_json::to_string_pretty(self)
+impl generator::Generator for DcMotor {
+    
+    fn generate_includes(&self) -> String {
+        "\
+        import com.qualcomm.robotcore.hardware.DcMotor;\n\
+        import org.firstinspires.ftc.robotcore.external.Telemetry;\n\
+        import com.qualcomm.robotcore.hardware.HardwareMap;\n\
+        import com.qualcomm.robotcore.hardware.DcMotorEx;\n\n".to_string()
+    }
+    
+    fn generate_globals(&self) -> String {
+        format!("\tprivate DcMotorEx {} = null;\n", &self.name)
+    }
+    
+    fn generate_init(&self) -> String {
+        format!("\t\t{} = hardwareMap.get(DcMotorEx.class, \"{}\");\n\n", &self.name, &self.name) + 
+        &format!("\t\t{}.setDirection(DcMotor.Direction.{:?});\n\n", &self.name, &self.direction) +
+        &format!("\t\t{}.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);\n", &self.name) +
+        &format!("\t\t{}.setMode(DcMotor.RunMode.{:?});\n\n", &self.name, &self.mode)
+    }
+
+    fn generate_loop_one_time_setup(&self) -> String {
+        format!("\t\t\tdouble drive  = -gamepad1.left_stick_y*driveSpeed;  // forwards and backwards movement\n\
+        \t\t\tdouble strafe =  -gamepad1.left_stick_x*driveSpeed;  // side to side movement\n\
+        \t\t\tdouble turn   =  gamepad1.right_stick_x*turnSpeed; // rotation\n\n")
+    }
+    
+    fn generate_loop(&self) -> String {
+        format!("\t\t\t{}.setPower(Range.clip(  drive - strafe + turn, -{}, {}));\n\n", &self.name, self.max_speed, self.max_speed)
     }
 
     fn serialize(&self) -> Result<String> {
@@ -40,10 +67,9 @@ impl generator::Generator for CoreHD {
     }
 
     fn render_options(&mut self, ui: &mut egui::Ui, id: usize) {
-
             let max_speed = 1.0;
             
-            ui.label("Core HD");
+            ui.label("DC Motor");
             ui.add_space(10.0);
 
             ui.push_id(id, |ui| {
@@ -70,7 +96,7 @@ impl generator::Generator for CoreHD {
 
             ui.add_space(20.0);
 
-            ui.add(egui::Slider::new(&mut self.max_speed, -max_speed..=max_speed).text("Max speed"));
+            ui.add(egui::Slider::new(&mut self.max_speed, 0.0..=max_speed).text("Max speed"));
 
             if ui.button("Increment").clicked() {
                 self.max_speed += 0.1;
@@ -90,6 +116,6 @@ impl generator::Generator for CoreHD {
     }
 }
 
-impl Motor for CoreHD {}
+impl Motor for DcMotor {}
 
-impl MotorGenerator for CoreHD {}
+impl MotorGenerator for DcMotor {}

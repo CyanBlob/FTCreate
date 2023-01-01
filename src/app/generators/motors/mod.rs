@@ -1,2 +1,2 @@
-pub mod core_hd;
+pub mod dc_motor;
 pub mod motor;

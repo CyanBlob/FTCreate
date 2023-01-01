@@ -5,10 +5,9 @@ use generators::drivetrain;
 use generators::motors::motor::MotorGenerator;
 
 use crate::app::drivetrain::drivetrain::Drivetrain;
-use generators::motors::core_hd::CoreHD;
+use generators::motors::dc_motor::DcMotor;
 
 pub mod syntax_highlighting;
-
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -21,8 +20,8 @@ pub struct TemplateApp {
     #[serde(skip)]
     value: f32,
 
-    drivetrain: Drivetrain<CoreHD>,
-    code: String
+    drivetrain: Drivetrain<DcMotor>,
+    code: String,
 }
 
 impl Default for TemplateApp {
@@ -34,17 +33,19 @@ impl Default for TemplateApp {
             drivetrain: //Rc::new(
             Drivetrain {
                 motors: //Rc::new(
-                vec![CoreHD {
-                    direction: generators::motors::motor::MotorDirection::Forward,
-                    mode: generators::motors::motor::MotorMode::RunToPosition,
+                vec![DcMotor {
+                    direction: generators::motors::motor::MotorDirection::FORWARD,
+                    mode: generators::motors::motor::MotorMode::RUN_TO_POSITION,
                     max_speed: 0.75,
                     position: 0,
+                    name: "Motor1".to_string()
                 },
-                    CoreHD {
-                        direction: generators::motors::motor::MotorDirection::Reverse,
-                        mode: generators::motors::motor::MotorMode::RunWithEncoders,
+                    DcMotor {
+                        direction: generators::motors::motor::MotorDirection::REVERSE,
+                        mode: generators::motors::motor::MotorMode::RUN_WITHOUT_ENCODERS,
                         max_speed: -1.0,
                         position: 0,
+                        name: "Motor2".to_string()
                     }
                 ],
                 //),
@@ -67,6 +68,71 @@ impl TemplateApp {
         }
 
         Default::default()
+    }
+
+    pub fn generate_code(&mut self) {
+        let mut new_code = String::new();
+        
+        new_code += "package org.firstinspires.ftc.teamcode;\n\n";
+
+        // includes
+        new_code += &self
+            .drivetrain
+            .motors
+            .iter_mut()
+            .nth(0)
+            .unwrap()
+            .generate_includes();
+        
+            new_code += r#"@TeleOp(name="EasyFTC Teleop", group="Linear Opmode")"#;
+            new_code += "\n";
+            new_code += "public class EasyFTC_teleop extends LinearOpMode {\n\
+                \tprivate ElapsedTime runtime = new ElapsedTime();\n";
+
+        // globals
+        self.drivetrain
+            .motors
+            .iter_mut()
+            .for_each(|motor| new_code += &motor.generate_globals());
+        
+        new_code += "\n\t@Override\n\
+        \tpublic void runOpMode() {\n\
+            \t\ttelemetry.addData(\"Status\", \"Initialized\");\n\
+            \t\ttelemetry.update();";
+        new_code += "\n";
+
+        // initializers
+        self.drivetrain
+            .motors
+            .iter_mut()
+            .for_each(|motor| new_code += &motor.generate_init());
+        
+        new_code += "\n\t\twaitForStart();\n\n\
+            \t\t// Reset the timer (stopwatch) because we only care about time since the game\n\
+            \t\t// actually starts\n\
+            \t\truntime.reset();\n\n\
+            \t\twhile (opModeIsActive()) {\n\n";
+        
+        // loop one-time setup
+        new_code += &self
+            .drivetrain
+            .motors
+            .iter_mut()
+            .nth(0)
+            .unwrap()
+            .generate_loop_one_time_setup();
+
+        // loop
+        self.drivetrain
+            .motors
+            .iter_mut()
+            .for_each(|motor| new_code += &motor.generate_loop());
+        
+        new_code += "\t\t\ttelemetry.update();\n\
+                \t\t}\n\
+            \t}";
+
+        self.code = new_code.to_string();
     }
 }
 
@@ -156,17 +222,9 @@ impl eframe::App for TemplateApp {
                 show_code(ui, &self.code);
             });
 
-
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                 if ui.button("GENERATE!").clicked() {
-                    let mut new_code = String::new();
-
-                    self.drivetrain
-                        .motors
-                        .iter_mut()
-                        .for_each(|motor| {new_code += &motor.serialize().unwrap()});
-
-                    self.code = new_code.to_string();
+                    self.generate_code();
                 }
             });
         });

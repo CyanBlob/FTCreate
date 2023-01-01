@@ -1,21 +1,37 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'ftc_generator'",
+            "name": "Debug unit tests in library 'easy_ftc'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=easy_ftc"
+                ],
+                "filter": {
+                    "name": "easy_ftc",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'easy_ftc'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=ftc_generator",
-                    "--package=ftc_generator"
+                    "--bin=easy_ftc",
+                    "--package=easy_ftc"
                 ],
                 "filter": {
-                    "name": "ftc_generator",
+                    "name": "easy_ftc",
                     "kind": "bin"
                 }
             },
@@ -25,16 +41,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'ftc_generator'",
+            "name": "Debug unit tests in executable 'easy_ftc'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=ftc_generator",
-                    "--package=ftc_generator"
+                    "--bin=easy_ftc",
+                    "--package=easy_ftc"
                 ],
                 "filter": {
-                    "name": "ftc_generator",
+                    "name": "easy_ftc",
                     "kind": "bin"
                 }
             },
