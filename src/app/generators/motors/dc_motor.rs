@@ -71,6 +71,8 @@ impl generator::Generator for DcMotor {
             
             ui.label("DC Motor");
             ui.add_space(10.0);
+            
+            ui.text_edit_singleline(&mut self.name);
 
             ui.push_id(id, |ui| {
                 egui::ComboBox::from_label("Run mode")
