@@ -119,86 +119,94 @@ impl<
     }
 
     fn render_options(&mut self, ui: &mut egui::Ui, _id: usize) {
-        ui.add_space(20.0);
+        egui::scroll_area::ScrollArea::vertical()
+            .auto_shrink([false; 2])
+            .show(ui, |ui| {
+                ui.add_space(20.0);
 
-        egui::ComboBox::from_label("Drivetrain type")
-            .selected_text(format!("{:?}", &mut self.drivetrain_type))
-            .width(170.0)
-            .show_ui(ui, |ui| {
-                for mode in DrivetrainType::iter() {
-                    ui.selectable_value(&mut self.drivetrain_type, mode, format!("{:?}", mode));
-                }
-            });
+                egui::ComboBox::from_label("Drivetrain type")
+                    .selected_text(format!("{:?}", &mut self.drivetrain_type))
+                    .width(170.0)
+                    .show_ui(ui, |ui| {
+                        for mode in DrivetrainType::iter() {
+                            ui.selectable_value(
+                                &mut self.drivetrain_type,
+                                mode,
+                                format!("{:?}", mode),
+                            );
+                        }
+                    });
 
-        self.motors.iter_mut().for_each(|motor| {
-            motor.set_drivetrain_type(Some(self.drivetrain_type));
-        });
-
-        let mut added_motors = 0;
-        let num_columns = 2;
-
-        ui.add_space(30.0);
-
-        ui.horizontal(|ui| {
-            ui.heading("Motors");
-
-            if ui.button("Add motor").clicked() {
-                self.motors.push(T::new());
-            }
-
-            if ui.button("Remove motor").clicked() {
-                self.motors.pop();
-            }
-        });
-
-        ui.add_space(10.0);
-
-        egui::Grid::new("Drivetrain motors grid").show(ui, |ui| {
-            self.motors.iter_mut().enumerate().for_each(|(id, motor)| {
-                added_motors += 1;
-                ui.vertical(|ui| {
-                    ui.add_space(20.0);
-                    ui.separator();
-                    motor.render_options(ui, id);
+                self.motors.iter_mut().for_each(|motor| {
+                    motor.set_drivetrain_type(Some(self.drivetrain_type));
                 });
 
-                if added_motors % num_columns == 0 {
-                    ui.end_row();
-                }
-            });
-        });
+                let mut added_motors = 0;
+                let num_columns = 2;
 
-        ui.add_space(30.0);
+                ui.add_space(30.0);
 
-        ui.horizontal(|ui| {
-            ui.heading("Servos");
+                ui.horizontal(|ui| {
+                    ui.heading("Motors");
 
-            if ui.button("Add servo").clicked() {
-                self.servos.push(U::new());
-            }
+                    if ui.button("Add motor").clicked() {
+                        self.motors.push(T::new());
+                    }
 
-            if ui.button("Remove servo").clicked() {
-                self.servos.pop();
-            }
-        });
-
-        ui.add_space(10.0);
-
-        added_motors = 0;
-        egui::Grid::new("Servos grid").show(ui, |ui| {
-            self.servos.iter_mut().enumerate().for_each(|(id, servo)| {
-                added_motors += 1;
-                ui.vertical(|ui| {
-                    ui.add_space(20.0);
-                    ui.separator();
-                    servo.render_options(ui, id + 1000);
+                    if ui.button("Remove motor").clicked() {
+                        self.motors.pop();
+                    }
                 });
 
-                if added_motors % num_columns == 0 {
-                    ui.end_row();
-                }
+                ui.add_space(10.0);
+
+                egui::Grid::new("Drivetrain motors grid").show(ui, |ui| {
+                    self.motors.iter_mut().enumerate().for_each(|(id, motor)| {
+                        added_motors += 1;
+                        ui.vertical(|ui| {
+                            ui.add_space(20.0);
+                            ui.separator();
+                            motor.render_options(ui, id);
+                        });
+
+                        if added_motors % num_columns == 0 {
+                            ui.end_row();
+                        }
+                    });
+                });
+
+                ui.add_space(30.0);
+
+                ui.horizontal(|ui| {
+                    ui.heading("Servos");
+
+                    if ui.button("Add servo").clicked() {
+                        self.servos.push(U::new());
+                    }
+
+                    if ui.button("Remove servo").clicked() {
+                        self.servos.pop();
+                    }
+                });
+
+                ui.add_space(10.0);
+
+                added_motors = 0;
+                egui::Grid::new("Servos grid").show(ui, |ui| {
+                    self.servos.iter_mut().enumerate().for_each(|(id, servo)| {
+                        added_motors += 1;
+                        ui.vertical(|ui| {
+                            ui.add_space(20.0);
+                            ui.separator();
+                            servo.render_options(ui, id + 1000);
+                        });
+
+                        if added_motors % num_columns == 0 {
+                            ui.end_row();
+                        }
+                    });
+                });
             });
-        });
     }
 }
 

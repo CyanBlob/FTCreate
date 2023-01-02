@@ -17,7 +17,7 @@ pub struct DcMotor {
     pub mecanum_position: motors::motor::MecanumPosition,
     pub tank_position: motors::motor::TankPosition,
     pub name: String,
-    pub positions: Option<Vec<i32>>,
+    pub positions: Vec<i32>,
     pub drivetrain_type: Option<DrivetrainType>,
 }
 
@@ -143,6 +143,54 @@ impl generator::Generator for DcMotor {
         
         if let Some(drivetrain_type) = self.drivetrain_type {
             if drivetrain_type == DrivetrainType::Mecanum {
+                self.render_mecanum(ui, id);
+            }
+
+            else if drivetrain_type == DrivetrainType::Tank {
+                self.render_tank(ui, id);
+            }
+        }
+
+        if self.mode == MotorMode::RUN_TO_POSITION {
+            self.render_positions(ui, id);
+        }
+
+    }
+}
+
+impl DcMotor {
+
+    fn render_positions(&mut self, ui: &mut egui::Ui, _id: usize) {
+                ui.add_space(10.0);
+                ui.label("Fixed positions");
+                
+                let mut removed_positions = vec![];
+
+                for i in 0..self.positions.len() {
+                    ui.horizontal(|ui| {
+                        ui.add(egui::Slider::new(self.positions.iter_mut().nth(i).unwrap(), 0..=5000).text("Position").step_by(25.0));
+                        
+                        ui.push_id(i + 200, |ui| {
+                            if ui.button("Delete").clicked() {
+                                removed_positions.push(i);
+                            }
+                        });
+                    });
+                }
+                
+                for i in removed_positions {
+                    self.positions.remove(i);
+                }
+
+                ui.horizontal(|ui| {
+                    if ui.button("Add position").clicked() {
+                        self.positions.push(0);
+                    }
+
+                });
+    }
+
+    fn render_mecanum(&mut self, ui: &mut egui::Ui, id: usize) {
                 ui.push_id(id + 100, |ui| {
                     egui::ComboBox::from_label("Mecanum position")
                         .selected_text(format!("{:?}", &mut self.mecanum_position))
@@ -153,9 +201,11 @@ impl generator::Generator for DcMotor {
                             }
                         });
                 });
-            }
+                
+                
+    }
 
-            else if drivetrain_type == DrivetrainType::Tank {
+    fn render_tank(&mut self, ui: &mut egui::Ui, id: usize) {
                 ui.push_id(id + 100, |ui| {
                     egui::ComboBox::from_label("Tank position")
                         .selected_text(format!("{:?}", &mut self.tank_position))
@@ -166,13 +216,11 @@ impl generator::Generator for DcMotor {
                             }
                         });
                 });
-            }
-        }
-
     }
 }
 
-impl Motor for DcMotor {}
+impl Motor for DcMotor {
+}
 
 impl MotorGenerator for DcMotor {
     fn new() -> Self {
@@ -183,7 +231,7 @@ impl MotorGenerator for DcMotor {
             mecanum_position: MecanumPosition::FrontLeft,
             tank_position: TankPosition::Left,
             name: "Motor".to_string(),
-            positions: None,
+            positions: vec![],
             drivetrain_type: None,
         }
     }
