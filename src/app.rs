@@ -65,7 +65,7 @@ impl TemplateApp {
 
         // includes
         new_code += &self.drivetrain.generate_includes();
-        
+
         self.subsystems.iter().for_each(|subsystem| {
             new_code += &subsystem.generate_includes();
         });
@@ -147,15 +147,18 @@ impl eframe::App for TemplateApp {
         });
 
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
-            ui.heading("Generated code");
-
-            egui::scroll_area::ScrollArea::vertical()
-                .auto_shrink([false; 2])
-                .show(ui, |ui| {
-                    ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                        show_code(ui, &self.code);
-                    });
+            if ui.available_width() > 500.0 {
+                ui.heading("Generated code");
+                egui::scroll_area::ScrollArea::horizontal().show(ui, |ui| {
+                    egui::scroll_area::ScrollArea::vertical()
+                        .auto_shrink([false; 2])
+                        .show(ui, |ui| {
+                            ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
+                                show_code(ui, &self.code);
+                            });
+                        });
                 });
+            }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -245,7 +248,6 @@ impl eframe::App for TemplateApp {
                 ui.label("You would normally choose either panels OR windows.");
             });
         }
-
     }
 }
 

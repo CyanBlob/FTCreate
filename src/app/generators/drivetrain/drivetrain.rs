@@ -120,7 +120,7 @@ impl<
 
     fn render_options(&mut self, ui: &mut egui::Ui, _id: usize) {
         egui::scroll_area::ScrollArea::vertical()
-            .auto_shrink([false; 2])
+            .auto_shrink([true; 2])
             .show(ui, |ui| {
                 ui.add_space(20.0);
 
