@@ -5,7 +5,7 @@ use strum::IntoEnumIterator;
 use super::super::generator;
 use super::servo;
 
-use crate::app::generators::{servos, self};
+use crate::app::generators::{self, generator::GeneratorSerialize, servos};
 
 use servo::*;
 
@@ -17,7 +17,16 @@ pub struct RevServo {
 }
 
 impl RevServo {
+    pub fn new() -> Self {
+        RevServo {
+            direction: ServoDirection::FORWARD,
+            mode: ServoMode::Continuous,
+            name: "Servo".into(),
+        }
+    }
 }
+
+impl GeneratorSerialize for RevServo {}
 
 impl generator::Generator for RevServo {
     fn generate_includes(&self) -> String {
@@ -86,7 +95,6 @@ impl generator::Generator for RevServo {
         });
 
         ui.add_space(20.0);
-
     }
 }
 

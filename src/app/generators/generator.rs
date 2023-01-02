@@ -19,11 +19,7 @@ pub trait Generator {
         "".to_string()
     }
 
-    fn serialize(&self) -> Result<String, serde_json::error::Error> where Self: serde::Serialize {
-        serde_json::to_string_pretty(self)
-    }
-
-    fn deserialize<'a>(&self, json: &'a str) -> Result<Box::<Self>, serde_json::error::Error> where Self: serde::Deserialize<'a> {
+    /*fn deserialize<'a>(&self, json: &'a str) -> Result<Box::<Self>, serde_json::error::Error> where Self: serde::Deserialize<'a> {
         match serde_json::from_str::<Self>(json) {
             Ok(s) => {
                 Ok(Box::new(s))
@@ -33,7 +29,19 @@ pub trait Generator {
             }
             
         }
-    }
+    }*/
     
     fn render_options(&mut self, ui: &mut egui::Ui, id: usize);
+}
+
+pub trait GeneratorSerialize: serde::Serialize + Generator{
+}
+
+pub trait SubsystemGenerator
+{
+    //fn new() -> Self { }
+
+    fn get_name(&self) -> String {
+        "Subsystem".to_string()
+    }
 }

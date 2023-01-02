@@ -1,13 +1,17 @@
+use std::rc::Rc;
+
 use crate::app::generators::generator::Generator;
 pub mod generators;
 
 use generators::drivetrain;
 
 use crate::app::drivetrain::drivetrain::Drivetrain;
+//use crate::app::subsystem::subsystem::Subsystem;
 use generators::motors::dc_motor::DcMotor;
 use generators::servos::rev_servo::RevServo;
 
-use self::generators::{drivetrain::drivetrain::DrivetrainType, motors::motor::{MecanumPosition, TankPosition}};
+use self::generators::generator::{GeneratorSerialize, SubsystemGenerator};
+use self::generators::subsystem::subsystem::Subsystem;
 
 pub mod syntax_highlighting;
 
@@ -18,12 +22,12 @@ pub struct TemplateApp {
     // Example stuff:
     label: String,
 
-    // this how you opt-out of serialization of a member
-    #[serde(skip)]
-    value: f32,
-
     drivetrain: Drivetrain<DcMotor, RevServo>,
+    subsystems: Vec<Subsystem<DcMotor, RevServo>>,
     code: String,
+
+    #[serde(skip)]
+    visible: usize,
 }
 
 impl Default for TemplateApp {
@@ -31,41 +35,17 @@ impl Default for TemplateApp {
         Self {
             // Example stuff:
             label: "Hello World!".to_owned(),
-            value: 2.7,
-            drivetrain: Drivetrain {
-                motors: vec![
-                    DcMotor {
-                        direction: generators::motors::motor::MotorDirection::FORWARD,
-                        mode: generators::motors::motor::MotorMode::RUN_TO_POSITION,
-                        max_speed: 0.75,
-                        mecanum_position: MecanumPosition::FrontLeft,
-                        tank_position: TankPosition::Left,
-                        name: "Motor1".to_string(),
-                        drivetrain_type: DrivetrainType::Mecanum,
-                        positions: None,
-                    },
-                    DcMotor {
-                        direction: generators::motors::motor::MotorDirection::REVERSE,
-                        mode: generators::motors::motor::MotorMode::RUN_WITHOUT_ENCODERS,
-                        max_speed: 1.0,
-                        mecanum_position: MecanumPosition::FrontRight,
-                        tank_position: TankPosition::Right,
-                        name: "Motor2".to_string(),
-                        drivetrain_type: DrivetrainType::Mecanum,
-                        positions: None,
-                    },
-                ],
-                drivetrain_type: DrivetrainType::Mecanum,
-                servos: vec![]
-            },
+            drivetrain: Drivetrain::new(),
+            subsystems: vec![],
             code: "Click \"GENERATE!\"".to_string(),
+            visible: 0,
         }
     }
 }
 
 impl TemplateApp {
     /// Called once before the first frame.
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
 
@@ -84,15 +64,11 @@ impl TemplateApp {
         new_code += "package org.firstinspires.ftc.teamcode;\n\n";
 
         // includes
-        if self.drivetrain.motors.len() > 0 as usize {
-            new_code += &self
-                .drivetrain
-                .motors
-                .iter_mut()
-                .nth(0)
-                .unwrap()
-                .generate_includes();
-        }
+        new_code += &self.drivetrain.generate_includes();
+        
+        self.subsystems.iter().for_each(|subsystem| {
+            new_code += &subsystem.generate_includes();
+        });
 
         new_code += r#"@TeleOp(name="EasyFTC Teleop", group="Linear Opmode")"#;
         new_code += "\n";
@@ -100,10 +76,11 @@ impl TemplateApp {
                 \n\tprivate ElapsedTime runtime = new ElapsedTime();\n\n";
 
         // globals
-        self.drivetrain
-            .motors
-            .iter_mut()
-            .for_each(|motor| new_code += &motor.generate_globals());
+        new_code += &self.drivetrain.generate_globals();
+
+        self.subsystems.iter().for_each(|subsystem| {
+            new_code += &subsystem.generate_globals();
+        });
 
         new_code += "\n\t@Override\n\
         \tpublic void runOpMode() {\n\n\
@@ -112,10 +89,11 @@ impl TemplateApp {
         new_code += "\n\n";
 
         // initializers
-        self.drivetrain
-            .motors
-            .iter_mut()
-            .for_each(|motor| new_code += &motor.generate_init());
+        new_code += &self.drivetrain.generate_init();
+
+        self.subsystems.iter().for_each(|subsystem| {
+            new_code += &subsystem.generate_init();
+        });
 
         new_code += "\n\t\twaitForStart();\n\n\
             \t\t// Reset the timer (stopwatch) because we only care about time since the game\n\
@@ -126,21 +104,16 @@ impl TemplateApp {
         // loop one-time setup
         new_code += &self.drivetrain.generate_loop_one_time_setup();
 
-        if self.drivetrain.motors.len() > 0 as usize {
-            new_code += &self
-                .drivetrain
-                .motors
-                .iter_mut()
-                .nth(0)
-                .unwrap()
-                .generate_loop_one_time_setup();
-        }
+        self.subsystems.iter().for_each(|subsystem| {
+            new_code += &subsystem.generate_loop_one_time_setup();
+        });
 
         // loop
-        self.drivetrain
-            .motors
-            .iter_mut()
-            .for_each(|motor| new_code += &motor.generate_loop());
+        new_code += &self.drivetrain.generate_loop();
+
+        self.subsystems.iter().for_each(|subsystem| {
+            new_code += &subsystem.generate_loop();
+        });
 
         new_code += "\t\t\ttelemetry.update();\n\
                 \t\t}\n\
@@ -173,20 +146,6 @@ impl eframe::App for TemplateApp {
             });
         });
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("Drivetrain Configuration");
-            egui::warn_if_debug_build(ui);
-
-            self.drivetrain.render_options(ui, 0);
-
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-                if ui.button("GENERATE!").clicked() {
-                    self.generate_code();
-                }
-            });
-        });
-
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
             ui.heading("Generated code");
 
@@ -197,7 +156,84 @@ impl eframe::App for TemplateApp {
                         show_code(ui, &self.code);
                     });
                 });
+        });
 
+        egui::CentralPanel::default().show(ctx, |ui| {
+            egui::TopBottomPanel::top("subsystem_panel").show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Subsystems: ");
+                    if ui.button("Drivetrain").clicked() {
+                        self.visible = 0;
+                    }
+
+                    self.subsystems
+                        .iter()
+                        .enumerate()
+                        .for_each(|(i, subsystem)| {
+                            if ui.button(subsystem.get_name()).clicked() {
+                                self.visible = i + 1;
+                            }
+                        });
+
+                    if ui.button("Add subsystem").clicked() {
+                        self.subsystems.push(Subsystem::new());
+                        self.visible = self.subsystems.len();
+                    }
+                });
+            });
+
+            // The central panel the region left after adding TopPanel's and SidePanel's
+            ui.add_space(30.0);
+
+            if self.visible == 0 {
+                ui.heading("Drivetrain Configuration");
+            } else {
+                ui.heading(format!(
+                    "{} Configuration",
+                    self.subsystems
+                        .iter()
+                        .nth(self.visible - 1)
+                        .unwrap()
+                        .get_name()
+                ));
+
+                ui.horizontal(|ui| {
+                    let text_edit = egui::TextEdit::singleline(
+                        &mut self
+                            .subsystems
+                            .iter_mut()
+                            .nth(self.visible - 1)
+                            .unwrap()
+                            .name,
+                    )
+                    .desired_width(100.0);
+                    ui.add(text_edit);
+                    ui.label("Rename subsystem");
+                });
+
+                ui.add_space(10.0);
+
+                if ui.button("Delete subsystem").clicked() {
+                    self.subsystems.remove(self.visible - 1);
+                    self.visible -= 1;
+                }
+            }
+            if self.visible == 0 {
+                self.drivetrain.render_options(ui, 0);
+            } else {
+                self.subsystems
+                    .iter_mut()
+                    .nth(self.visible - 1)
+                    .unwrap()
+                    .render_options(ui, 0);
+            }
+
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
+                if ui.button("GENERATE!").clicked() {
+                    self.generate_code();
+                }
+                egui::warn_if_debug_build(ui);
+            });
         });
 
         if false {
@@ -208,6 +244,7 @@ impl eframe::App for TemplateApp {
                 ui.label("You would normally choose either panels OR windows.");
             });
         }
+
     }
 }
 
