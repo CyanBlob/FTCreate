@@ -14,15 +14,40 @@ pub struct RevServo {
     pub direction: servos::servo::ServoDirection,
     pub mode: servos::servo::ServoMode,
     pub name: String,
+    pub positions: Vec<f32>,
 }
 
 impl RevServo {
-    pub fn new() -> Self {
-        RevServo {
-            direction: ServoDirection::FORWARD,
-            mode: ServoMode::Continuous,
-            name: "Servo".into(),
+    fn render_positions(&mut self, ui: &mut egui::Ui, _id: usize) {
+        ui.add_space(10.0);
+        ui.label("Fixed positions");
+
+        let mut removed_positions = vec![];
+
+        for i in 0..self.positions.len() {
+            ui.horizontal(|ui| {
+                ui.add(
+                    egui::Slider::new(self.positions.iter_mut().nth(i).unwrap(), -1.0..=1.0)
+                        .text("Position")
+                        .step_by(0.01)
+                        .max_decimals(2),
+                );
+
+                if ui.button("Delete").clicked() {
+                    removed_positions.push(i);
+                }
+            });
         }
+
+        for i in removed_positions {
+            self.positions.remove(i);
+        }
+
+        ui.horizontal(|ui| {
+            if ui.button("Add position").clicked() {
+                self.positions.push(0.0);
+            }
+        });
     }
 }
 
@@ -39,10 +64,21 @@ impl generator::Generator for RevServo {
     }
 
     fn generate_globals(&self) -> String {
-        format!(
+        let mut code = format!(
             "\t// {} globals\n\tprivate RevServoEx {} = null;\n\n",
             &self.name, &self.name
-        )
+        );
+
+        for i in 0..self.positions.len() {
+            code += &format!(
+                "\t{}_pos_{} = {};\n",
+                self.name,
+                i,
+                self.positions.iter().nth(i).unwrap()
+            );
+        }
+        code += &"\n";
+        code
     }
 
     fn generate_init(&self) -> String {
@@ -94,6 +130,8 @@ impl generator::Generator for RevServo {
                 });
         });
 
+        self.render_positions(ui, id);
+
         ui.add_space(20.0);
     }
 }
@@ -106,6 +144,7 @@ impl ServoGenerator for RevServo {
             direction: generators::servos::servo::ServoDirection::FORWARD,
             mode: generators::servos::servo::ServoMode::Servo,
             name: "Servo".to_string(),
+            positions: vec![],
         }
     }
 }

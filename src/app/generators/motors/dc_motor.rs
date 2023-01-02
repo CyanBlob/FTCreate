@@ -145,7 +145,7 @@ impl generator::Generator for DcMotor {
 
         ui.add_space(20.0);
 
-        ui.add(egui::Slider::new(&mut self.max_speed, 0.0..=max_speed).text("Max speed"));
+        ui.add(egui::Slider::new(&mut self.max_speed, 0.0..=max_speed).text("Max speed").max_decimals(2));
 
         ui.add_space(20.0);
         
@@ -175,7 +175,7 @@ impl DcMotor {
 
                 for i in 0..self.positions.len() {
                     ui.horizontal(|ui| {
-                        ui.add(egui::Slider::new(self.positions.iter_mut().nth(i).unwrap(), 0..=5000).text("Position").step_by(25.0));
+                        ui.add(egui::Slider::new(self.positions.iter_mut().nth(i).unwrap(), 0..=5000).text("Position").step_by(25.0).max_decimals(2));
                         
                             if ui.button("Delete").clicked() {
                                 removed_positions.push(i);
