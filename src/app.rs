@@ -228,12 +228,13 @@ impl eframe::App for TemplateApp {
                     .render_options(ui, 0);
             }
 
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
+            /*ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                 if ui.button("GENERATE!").clicked() {
                     self.generate_code();
                 }
                 egui::warn_if_debug_build(ui);
-            });
+            });*/
+            self.generate_code();
         });
 
         if false {

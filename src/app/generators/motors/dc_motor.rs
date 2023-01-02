@@ -167,7 +167,6 @@ impl generator::Generator for DcMotor {
 }
 
 impl DcMotor {
-
     fn render_positions(&mut self, ui: &mut egui::Ui, _id: usize) {
                 ui.add_space(10.0);
                 ui.label("Fixed positions");
