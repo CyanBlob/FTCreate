@@ -36,10 +36,19 @@ impl generator::Generator for DcMotor {
     }
 
     fn generate_globals(&self) -> String {
-        format!(
+        let mut code = format!(
             "\t// {} globals\n\tprivate DcMotorEx {} = null;\n\n",
             &self.name, &self.name
-        )
+        );
+            
+        if self.mode == MotorMode::RUN_TO_POSITION {
+            for i in 0..self.positions.len() {
+                code += &format!("\t{}_pos_{} = {};\n", self.name, i, self.positions.iter().nth(i).unwrap());
+            }
+            code += &"\n";
+        }
+        
+        code
     }
 
     fn generate_init(&self) -> String {
@@ -108,7 +117,6 @@ impl generator::Generator for DcMotor {
 
         ui.text_edit_singleline(&mut self.name);
 
-        // TODO: refactor into function
         ui.push_id(id, |ui| {
             egui::ComboBox::from_label("Run mode")
                 .selected_text(format!("{:?}", &mut self.mode))
@@ -170,12 +178,10 @@ impl DcMotor {
                     ui.horizontal(|ui| {
                         ui.add(egui::Slider::new(self.positions.iter_mut().nth(i).unwrap(), 0..=5000).text("Position").step_by(25.0));
                         
-                        ui.push_id(i + 200, |ui| {
                             if ui.button("Delete").clicked() {
                                 removed_positions.push(i);
                             }
                         });
-                    });
                 }
                 
                 for i in removed_positions {
