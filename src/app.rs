@@ -5,8 +5,9 @@ use generators::drivetrain;
 
 use crate::app::drivetrain::drivetrain::Drivetrain;
 use generators::motors::dc_motor::DcMotor;
+use generators::servos::rev_servo::RevServo;
 
-use self::generators::{drivetrain::drivetrain::DrivetrainType, motors::motor::MecanumPosition};
+use self::generators::{drivetrain::drivetrain::DrivetrainType, motors::motor::{MecanumPosition, TankPosition}};
 
 pub mod syntax_highlighting;
 
@@ -21,7 +22,7 @@ pub struct TemplateApp {
     #[serde(skip)]
     value: f32,
 
-    drivetrain: Drivetrain<DcMotor>,
+    drivetrain: Drivetrain<DcMotor, RevServo>,
     code: String,
 }
 
@@ -38,6 +39,7 @@ impl Default for TemplateApp {
                         mode: generators::motors::motor::MotorMode::RUN_TO_POSITION,
                         max_speed: 0.75,
                         mecanum_position: MecanumPosition::FrontLeft,
+                        tank_position: TankPosition::Left,
                         name: "Motor1".to_string(),
                         drivetrain_type: DrivetrainType::Mecanum,
                         positions: None,
@@ -45,14 +47,16 @@ impl Default for TemplateApp {
                     DcMotor {
                         direction: generators::motors::motor::MotorDirection::REVERSE,
                         mode: generators::motors::motor::MotorMode::RUN_WITHOUT_ENCODERS,
-                        max_speed: -1.0,
+                        max_speed: 1.0,
                         mecanum_position: MecanumPosition::FrontRight,
+                        tank_position: TankPosition::Right,
                         name: "Motor2".to_string(),
                         drivetrain_type: DrivetrainType::Mecanum,
                         positions: None,
                     },
                 ],
                 drivetrain_type: DrivetrainType::Mecanum,
+                servos: vec![]
             },
             code: "Click \"GENERATE!\"".to_string(),
         }
@@ -155,9 +159,6 @@ impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Examples of how to create different panels and windows.
-        // Pick whichever suits you.
-        // Tip: a good default choice is to just keep the `CentralPanel`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
         #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
@@ -178,6 +179,12 @@ impl eframe::App for TemplateApp {
             egui::warn_if_debug_build(ui);
 
             self.drivetrain.render_options(ui, 0);
+
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
+                if ui.button("GENERATE!").clicked() {
+                    self.generate_code();
+                }
+            });
         });
 
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
@@ -191,11 +198,6 @@ impl eframe::App for TemplateApp {
                     });
                 });
 
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-                if ui.button("GENERATE!").clicked() {
-                    self.generate_code();
-                }
-            });
         });
 
         if false {

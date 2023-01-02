@@ -1,4 +1,4 @@
-use crate::app::generators::{generator, motors::motor::MotorGenerator};
+use crate::app::generators::{generator, motors::motor::MotorGenerator, servos::servo::ServoGenerator};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
@@ -15,13 +15,16 @@ pub enum DrivetrainType {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Drivetrain<
     T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
+    U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
 > {
     pub motors: Vec<T>,
+    pub servos: Vec<U>,
     pub drivetrain_type: DrivetrainType,
 }
 
-impl<T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone>
-    generator::Generator for Drivetrain<T>
+impl<T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
+    U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone>
+    generator::Generator for Drivetrain<T, U>
 {
     fn render_options(&mut self, ui: &mut egui::Ui, _id: usize) {
         //ui.label("Drivetrain options");
@@ -33,6 +36,14 @@ impl<T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone
 
         if ui.button("Remove motor").clicked() {
             self.motors.pop();
+        }
+
+        if ui.button("Add servo").clicked() {
+            self.servos.push(U::new());
+        }
+
+        if ui.button("Remove servo").clicked() {
+            self.servos.pop();
         }
 
         ui.add_space(20.0);
@@ -50,16 +61,49 @@ impl<T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone
             motor.set_drivetrain_type(self.drivetrain_type);
         });
 
-        self.motors.iter_mut().enumerate().for_each(|(id, motor)| {
-            ui.add_space(20.0);
-            ui.separator();
-            motor.render_options(ui, id);
+        let mut added_motors = 0;
+        let num_columns = 2;
+
+        egui::Grid::new("Drivetrain motors grid").show(ui, |ui| {
+            self.motors.iter_mut().enumerate().for_each(|(id, motor)| {
+                added_motors += 1;
+                ui.vertical(|ui| {
+                    ui.add_space(20.0);
+                    ui.separator();
+                    motor.render_options(ui, id);
+                });
+
+                if added_motors % num_columns == 0 {
+                    ui.end_row();
+                }
+            });
+        });
+
+        egui::Grid::new("Servos grid").show(ui, |ui| {
+            self.servos.iter_mut().enumerate().for_each(|(id, servo)| {
+                added_motors += 1;
+                ui.vertical(|ui| {
+                    ui.add_space(20.0);
+                    ui.separator();
+                    servo.render_options(ui, id + 1000);
+                });
+
+                if added_motors % num_columns == 0 {
+                    ui.end_row();
+                }
+            });
         });
     }
 
     fn generate_loop_one_time_setup(&self) -> String {
-        format!("\t\t\t// Drivetrain one time setup\n\t\t\tdouble drive  = -gamepad1.left_stick_y*driveSpeed;  // forwards and backwards movement\n\
-        \t\t\tdouble strafe = -gamepad1.left_stick_x*driveSpeed;  // side to side movement\n\
-        \t\t\tdouble turn   =  gamepad1.right_stick_x*turnSpeed;  // rotation\n\n")
+        let mut output = format!("\t\t\t// Drivetrain one time setup\n\t\t\tdouble drive  = -gamepad1.left_stick_y*driveSpeed;  // forwards and backwards movement\n\
+        \t\t\tdouble turn   =  gamepad1.right_stick_x*turnSpeed;  // rotation\n");
+        
+        if self.drivetrain_type == DrivetrainType::Mecanum {
+            output += &format!("\t\t\tdouble strafe = -gamepad1.left_stick_x*driveSpeed;  // side to side movement\n");
+        }
+        
+        output += "\n";
+        output
     }
 }

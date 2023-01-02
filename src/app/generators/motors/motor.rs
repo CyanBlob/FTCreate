@@ -26,6 +26,12 @@ pub enum MecanumPosition {
     RearRight
 }
 
+#[derive(Copy, PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord, EnumIter)]
+pub enum TankPosition {
+    Left,
+    Right,
+}
+
 pub trait MotorGenerator: Motor + Generator {
     fn new() -> Self;
     fn set_drivetrain_type(&mut self, drivetrain_type: DrivetrainType);

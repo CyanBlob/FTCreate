@@ -15,6 +15,7 @@ pub struct DcMotor {
     pub mode: motors::motor::MotorMode,
     pub max_speed: f64,
     pub mecanum_position: motors::motor::MecanumPosition,
+    pub tank_position: motors::motor::TankPosition,
     pub name: String,
     pub positions: Option<Vec<i32>>,
     pub drivetrain_type: DrivetrainType,
@@ -56,10 +57,44 @@ impl generator::Generator for DcMotor {
     }
 
     fn generate_loop(&self) -> String {
-        format!(
-            "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive - strafe + turn, -{}, {}));\n\n",
-            &self.name, &self.name, self.max_speed, self.max_speed
-        )
+        match self.drivetrain_type {
+        DrivetrainType::Mecanum => match self.mecanum_position {
+            MecanumPosition::FrontLeft => 
+                format!(
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive - strafe + turn, -{}, {}));\n\n",
+                    &self.name, &self.name, self.max_speed, self.max_speed
+                ),
+            MecanumPosition::FrontRight => 
+                format!(
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive + strafe - turn, -{}, {}));\n\n",
+                    &self.name, &self.name, self.max_speed, self.max_speed
+                ),
+            MecanumPosition::RearLeft =>
+                format!(
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive + strafe + turn, -{}, {}));\n\n",
+                    &self.name, &self.name, self.max_speed, self.max_speed
+                ),
+            MecanumPosition::RearRight => 
+                format!(
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive - strafe - turn, -{}, {}));\n\n",
+                    &self.name, &self.name, self.max_speed, self.max_speed
+                ),
+        }
+            DrivetrainType::Tank => {
+                match self.tank_position {
+                    TankPosition::Left => {
+                format!(
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive + turn, -{}, {}));\n\n",
+                    &self.name, &self.name, self.max_speed, self.max_speed
+                )},
+                    TankPosition::Right => {
+                format!(
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive - turn, -{}, {}));\n\n",
+                    &self.name, &self.name, self.max_speed, self.max_speed
+                )},
+                    }
+                }
+    }
     }
 
     fn render_options(&mut self, ui: &mut egui::Ui, id: usize) {
@@ -101,22 +136,6 @@ impl generator::Generator for DcMotor {
 
         ui.add(egui::Slider::new(&mut self.max_speed, 0.0..=max_speed).text("Max speed"));
 
-        if ui.button("Increment").clicked() {
-            self.max_speed += 0.1;
-
-            if self.max_speed > max_speed {
-                self.max_speed = max_speed;
-            }
-        }
-
-        if ui.button("Decrement").clicked() {
-            self.max_speed -= 0.1;
-
-            if self.max_speed < 0.0 {
-                self.max_speed = 0.0;
-            }
-        }
-
         ui.add_space(20.0);
 
         if self.drivetrain_type == DrivetrainType::Mecanum {
@@ -127,6 +146,19 @@ impl generator::Generator for DcMotor {
                     .show_ui(ui, |ui| {
                         for position in MecanumPosition::iter() {
                             ui.selectable_value(&mut self.mecanum_position, position, format!("{:?}", position));
+                        }
+                    });
+            });
+        }
+
+        else if self.drivetrain_type == DrivetrainType::Tank {
+            ui.push_id(id + 100, |ui| {
+                egui::ComboBox::from_label("Tank position")
+                    .selected_text(format!("{:?}", &mut self.tank_position))
+                    .width(170.0)
+                    .show_ui(ui, |ui| {
+                        for position in TankPosition::iter() {
+                            ui.selectable_value(&mut self.tank_position, position, format!("{:?}", position));
                         }
                     });
             });
@@ -143,6 +175,7 @@ impl MotorGenerator for DcMotor {
             mode: generators::motors::motor::MotorMode::RUN_TO_POSITION,
             max_speed: 1.0,
             mecanum_position: MecanumPosition::FrontLeft,
+            tank_position: TankPosition::Left,
             name: "Motor".to_string(),
             positions: None,
             drivetrain_type: DrivetrainType::Mecanum,

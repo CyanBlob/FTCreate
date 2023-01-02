@@ -54,9 +54,7 @@ impl generator::Generator for RevServo {
     }*/
 
     fn render_options(&mut self, ui: &mut egui::Ui, id: usize) {
-        let max_speed = 1.0;
-
-        ui.label("DC Servo");
+        ui.label("Rev servo");
         ui.add_space(10.0);
 
         ui.text_edit_singleline(&mut self.name);
@@ -89,7 +87,6 @@ impl generator::Generator for RevServo {
 
         ui.add_space(20.0);
 
-        ui.add(egui::Slider::new(&mut self.max_speed, 0.0..=max_speed).text("Max speed"));
     }
 }
 
