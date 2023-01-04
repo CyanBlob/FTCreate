@@ -15,7 +15,6 @@ use self::generators::subsystem::subsystem::Subsystem;
 
 pub mod syntax_highlighting;
 
-const MIN_WIDTH_TO_SHOW_PANEL: f32 = 725.0;
 const MAX_PANEL_WIDTH: f32 = 650.0;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -153,7 +152,6 @@ impl eframe::App for TemplateApp {
             });
         });
 
-        if width >= MIN_WIDTH_TO_SHOW_PANEL {
             egui::SidePanel::right("code_panel").show(ctx, |ui| {
                 ui.heading("Generated code");
                 egui::scroll_area::ScrollArea::horizontal()
@@ -168,7 +166,6 @@ impl eframe::App for TemplateApp {
                             });
                     });
             });
-        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::TopBottomPanel::top("subsystem_panel").show(ctx, |ui| {
