@@ -15,6 +15,9 @@ use self::generators::subsystem::subsystem::Subsystem;
 
 pub mod syntax_highlighting;
 
+const MIN_WIDTH_TO_SHOW_PANEL: f32 = 725.0;
+const MAX_PANEL_WIDTH: f32 = 650.0;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -134,8 +137,12 @@ impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
+        let mut width: f32 = 0.0;
+
         #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            width = ui.available_width();
+
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
@@ -146,20 +153,22 @@ impl eframe::App for TemplateApp {
             });
         });
 
-        egui::SidePanel::right("code_panel").show(ctx, |ui| {
-            if ui.available_width() > 500.0 {
+        if width >= MIN_WIDTH_TO_SHOW_PANEL {
+            egui::SidePanel::right("code_panel").show(ctx, |ui| {
                 ui.heading("Generated code");
-                egui::scroll_area::ScrollArea::horizontal().show(ui, |ui| {
-                    egui::scroll_area::ScrollArea::vertical()
-                        .auto_shrink([false; 2])
-                        .show(ui, |ui| {
-                            ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                                show_code(ui, &self.code);
+                egui::scroll_area::ScrollArea::horizontal()
+                    .max_width(width - MAX_PANEL_WIDTH)
+                    .show(ui, |ui| {
+                        egui::scroll_area::ScrollArea::vertical()
+                            .auto_shrink([false; 2])
+                            .show(ui, |ui| {
+                                ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
+                                    show_code(ui, &self.code);
+                                });
                             });
-                        });
-                });
-            }
-        });
+                    });
+            });
+        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::TopBottomPanel::top("subsystem_panel").show(ctx, |ui| {
