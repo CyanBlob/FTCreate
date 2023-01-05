@@ -138,37 +138,40 @@ impl eframe::App for TemplateApp {
 
         let mut width: f32 = 0.0;
 
-        #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
+        //#[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             width = ui.available_width();
 
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
-                    if ui.button("Quit").clicked() {
-                        _frame.close();
+                    if ui.button("This does nothing right now").clicked() {
+                        //_frame.close();
+                        //self.save(storage)
                     }
                 });
             });
         });
 
-            egui::SidePanel::right("code_panel").show(ctx, |ui| {
-                ui.heading("Generated code");
-                egui::scroll_area::ScrollArea::horizontal()
-                    .max_width(width - MAX_PANEL_WIDTH)
-                    .show(ui, |ui| {
-                        egui::scroll_area::ScrollArea::vertical()
-                            .auto_shrink([false; 2])
-                            .show(ui, |ui| {
-                                ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                                    show_code(ui, &self.code);
-                                });
+        egui::SidePanel::right("code_panel").show(ctx, |ui| {
+            ui.heading("Generated code");
+            egui::scroll_area::ScrollArea::horizontal()
+                .max_width(width - MAX_PANEL_WIDTH)
+                .show(ui, |ui| {
+                    egui::scroll_area::ScrollArea::vertical()
+                        .auto_shrink([false; 2])
+                        .show(ui, |ui| {
+                            ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
+                                show_code(ui, &self.code);
                             });
-                    });
-            });
+                        });
+                });
+        });
+
 
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::TopBottomPanel::top("subsystem_panel").show(ctx, |ui| {
+
                 ui.horizontal(|ui| {
                     ui.label("Subsystems: ");
                     if ui.button("Drivetrain").clicked() {
