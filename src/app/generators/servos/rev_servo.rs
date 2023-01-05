@@ -71,7 +71,7 @@ impl generator::Generator for RevServo {
 
         for i in 0..self.positions.len() {
             code += &format!(
-                "\t{}_pos_{} = {};\n",
+                "\tprivate float {}_pos_{} = {};\n",
                 self.name,
                 i,
                 self.positions.iter().nth(i).unwrap()

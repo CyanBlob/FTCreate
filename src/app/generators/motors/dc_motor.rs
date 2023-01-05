@@ -43,7 +43,7 @@ impl generator::Generator for DcMotor {
             
         if self.mode == MotorMode::RUN_TO_POSITION {
             for i in 0..self.positions.len() {
-                code += &format!("\t{}_pos_{} = {};\n", self.name, i, self.positions.iter().nth(i).unwrap());
+                code += &format!("\tprivate int {}_pos_{} = {};\n", self.name, i, self.positions.iter().nth(i).unwrap());
             }
             code += &"\n";
         }

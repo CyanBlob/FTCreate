@@ -123,11 +123,18 @@ impl SyntectTheme {
 pub struct CodeTheme {
     dark_mode: bool,
 
+    #[serde(skip)]
     #[cfg(feature = "syntect")]
     syntect_theme: SyntectTheme,
 
     #[cfg(not(feature = "syntect"))]
     formats: enum_map::EnumMap<TokenType, egui::TextFormat>,
+}
+
+impl Default for SyntectTheme {
+    fn default() -> Self {
+        SyntectTheme::Base16OceanLight
+    }
 }
 
 impl Default for CodeTheme {
@@ -171,14 +178,14 @@ impl CodeTheme {
     pub fn dark() -> Self {
         Self {
             dark_mode: true,
-            syntect_theme: SyntectTheme::Base16MochaDark,
+            syntect_theme: SyntectTheme:: Base16MochaDark,
         }
     }
 
     pub fn light() -> Self {
         Self {
             dark_mode: false,
-            syntect_theme: SyntectTheme::SolarizedLight,
+            syntect_theme: SyntectTheme::Base16OceanLight,
         }
     }
 
@@ -500,6 +507,12 @@ fn is_keyword(word: &str) -> bool {
             | "use"
             | "where"
             | "while"
+            | "TeleOp"
+            | "import"
+            | "public"
+            | "void"
+            | "class"
+            | "private"
     )
 }
 
