@@ -33,7 +33,7 @@ pub enum TankPosition {
 }
 
 pub trait MotorGenerator: Motor + Generator {
-    fn new() -> Self;
+    fn new(id: i32) -> Self;
     fn set_drivetrain_type(&mut self, drivetrain_type: Option<DrivetrainType>);
     fn set_mecanum_position(&mut self, position: MecanumPosition);
 }

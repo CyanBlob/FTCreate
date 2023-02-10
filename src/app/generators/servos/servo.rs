@@ -17,6 +17,6 @@ pub enum ServoMode {
 }
 
 pub trait ServoGenerator: Servo + Generator {
-    fn new() -> Self;
+    fn new(id: i32) -> Self;
 }
 pub trait Servo {}

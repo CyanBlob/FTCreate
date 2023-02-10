@@ -110,7 +110,7 @@ impl<
                     ui.heading("Motors");
 
                     if ui.button("Add motor").clicked() {
-                        self.motors.push(T::new());
+                        self.motors.push(T::new((self.motors.len() as i32) + 1));
                     }
 
                     if ui.button("Remove motor").clicked() {
@@ -141,7 +141,7 @@ impl<
                     ui.heading("Servos");
 
                     if ui.button("Add servo").clicked() {
-                        self.servos.push(U::new());
+                        self.servos.push(U::new(self.servos.len() as i32 + 1));
                     }
 
                     if ui.button("Remove servo").clicked() {
@@ -190,11 +190,11 @@ impl<
         U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
     > Subsystem<T, U>
 {
-    pub fn new() -> Self {
+    pub fn new(id: i32) -> Self {
         Subsystem {
-            motors: vec![T::new(), T::new()],
+            motors: vec![T::new(0), T::new(1)],
             servos: vec![],
-            name: "Subsystem".to_string(),
+            name: format!("Subsystem_{}", id),
         }
     }
 }

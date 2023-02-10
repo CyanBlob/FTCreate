@@ -139,11 +139,11 @@ impl generator::Generator for RevServo {
 impl Servo for RevServo {}
 
 impl ServoGenerator for RevServo {
-    fn new() -> Self {
+    fn new(id: i32) -> Self {
         RevServo {
             direction: generators::servos::servo::ServoDirection::FORWARD,
             mode: generators::servos::servo::ServoMode::Servo,
-            name: "Servo".to_string(),
+            name: format!("Servo_{}", id),
             positions: vec![],
         }
     }

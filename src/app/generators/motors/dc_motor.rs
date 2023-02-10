@@ -228,14 +228,14 @@ impl Motor for DcMotor {
 }
 
 impl MotorGenerator for DcMotor {
-    fn new() -> Self {
+    fn new(id: i32) -> Self {
         DcMotor {
             direction: generators::motors::motor::MotorDirection::FORWARD,
             mode: generators::motors::motor::MotorMode::RUN_TO_POSITION,
             max_speed: 1.0,
             mecanum_position: MecanumPosition::FrontLeft,
             tank_position: TankPosition::Left,
-            name: "Motor".to_string(),
+            name: format!("Motor_{}", id),
             positions: vec![],
             drivetrain_type: None,
         }

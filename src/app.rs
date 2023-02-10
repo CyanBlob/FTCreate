@@ -190,7 +190,7 @@ impl eframe::App for TemplateApp {
                         });
 
                     if ui.button("Add subsystem").clicked() {
-                        self.subsystems.push(Subsystem::new());
+                        self.subsystems.push(Subsystem::new(self.subsystems.len() as i32 + 1));
                         self.visible = self.subsystems.len();
                     }
                 });
