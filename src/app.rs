@@ -50,7 +50,7 @@ impl TemplateApp {
     pub fn new(cc: &eframe::CreationContext) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
-        
+
         //cc.egui_ctx.set_visuals(egui::Visuals::light());
 
         // Load previous app state (if any).
@@ -170,10 +170,8 @@ impl eframe::App for TemplateApp {
                 });
         });
 
-
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::TopBottomPanel::top("subsystem_panel").show(ctx, |ui| {
-
                 ui.horizontal(|ui| {
                     ui.label("Subsystems: ");
                     if ui.button("Drivetrain").clicked() {
@@ -190,7 +188,10 @@ impl eframe::App for TemplateApp {
                         });
 
                     if ui.button("Add subsystem").clicked() {
-                        self.subsystems.push(Subsystem::new(self.subsystems.len() as i32 + 1));
+                        self.subsystems.push(Subsystem::new(format!(
+                            "Subsystem_{}",
+                            self.subsystems.len() as i32 + 1
+                        )));
                         self.visible = self.subsystems.len();
                     }
                 });

@@ -1,5 +1,6 @@
 use crate::app::generators::{
     generator::{self, SubsystemGenerator},
+    method::Method,
     motors::{dc_motor::DcMotor, motor::MotorGenerator},
     servos::servo::ServoGenerator,
 };
@@ -21,6 +22,10 @@ impl<
         U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
     > generator::Generator for Subsystem<T, U>
 {
+    fn get_methods(&self) -> Vec<Method> {
+        vec![]
+    }
+
     fn generate_includes(&self) -> String {
         if self.motors.len() > 0 as usize {
             return self.motors.iter().nth(0).unwrap().generate_includes();
@@ -110,7 +115,11 @@ impl<
                     ui.heading("Motors");
 
                     if ui.button("Add motor").clicked() {
-                        self.motors.push(T::new((self.motors.len() as i32) + 1));
+                        self.motors.push(T::new(format!(
+                            "{}_motor_{}",
+                            self.name,
+                            self.motors.len() as i32 + 1
+                        )));
                     }
 
                     if ui.button("Remove motor").clicked() {
@@ -141,7 +150,11 @@ impl<
                     ui.heading("Servos");
 
                     if ui.button("Add servo").clicked() {
-                        self.servos.push(U::new(self.servos.len() as i32 + 1));
+                        self.servos.push(U::new(format!(
+                            "{}_servo_{}",
+                            self.name,
+                            self.servos.len() as i32 + 1
+                        )));
                     }
 
                     if ui.button("Remove servo").clicked() {
@@ -190,11 +203,14 @@ impl<
         U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
     > Subsystem<T, U>
 {
-    pub fn new(id: i32) -> Self {
+    pub fn new(name: String) -> Self {
         Subsystem {
-            motors: vec![T::new(0), T::new(1)],
+            motors: vec![
+                T::new(format!("{}_motor_{}", name, 0)),
+                T::new(format!("{}_motor_{}", name, 1)),
+            ],
             servos: vec![],
-            name: format!("Subsystem_{}", id),
+            name: name,
         }
     }
 }

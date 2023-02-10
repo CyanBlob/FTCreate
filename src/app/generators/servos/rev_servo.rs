@@ -5,7 +5,7 @@ use strum::IntoEnumIterator;
 use super::super::generator;
 use super::servo;
 
-use crate::app::generators::{self, generator::GeneratorSerialize, servos};
+use crate::app::generators::{self, generator::GeneratorSerialize, method::Method, servos};
 
 use servo::*;
 
@@ -54,6 +54,13 @@ impl RevServo {
 impl GeneratorSerialize for RevServo {}
 
 impl generator::Generator for RevServo {
+    fn get_methods(&self) -> Vec<Method> {
+        vec![Method {
+            name: "setPower".to_string(),
+            numArgs: 1,
+        }]
+    }
+
     fn generate_includes(&self) -> String {
         "\
         import com.qualcomm.robotcore.hardware.RevServo;\n\
@@ -139,11 +146,11 @@ impl generator::Generator for RevServo {
 impl Servo for RevServo {}
 
 impl ServoGenerator for RevServo {
-    fn new(id: i32) -> Self {
+    fn new(name: String) -> Self {
         RevServo {
             direction: generators::servos::servo::ServoDirection::FORWARD,
             mode: generators::servos::servo::ServoMode::Servo,
-            name: format!("Servo_{}", id),
+            name: name,
             positions: vec![],
         }
     }

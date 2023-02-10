@@ -1,5 +1,6 @@
 use crate::app::generators::{
     generator::{self, SubsystemGenerator},
+    method::Method,
     motors::motor::MotorGenerator,
     servos::servo::ServoGenerator,
 };
@@ -32,6 +33,10 @@ impl<
         U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
     > generator::Generator for Drivetrain<T, U>
 {
+    fn get_methods(&self) -> Vec<Method> {
+        vec![]
+    }
+
     fn generate_includes(&self) -> String {
         if self.motors.len() > 0 as usize {
             return self.motors.iter().nth(0).unwrap().generate_includes();
@@ -150,7 +155,11 @@ impl<
                     ui.heading("Motors");
 
                     if ui.button("Add motor").clicked() {
-                        self.motors.push(T::new((self.motors.len() as i32) + 1));
+                        self.motors.push(T::new(format!(
+                            "{}_motor_{}",
+                            self.name,
+                            self.motors.len() as i32 + 1
+                        )));
                     }
 
                     if ui.button("Remove motor").clicked() {
@@ -181,7 +190,11 @@ impl<
                     ui.heading("Servos");
 
                     if ui.button("Add servo").clicked() {
-                        self.servos.push(U::new(self.servos.len() as i32 + 1));
+                        self.servos.push(U::new(format!(
+                            "{}_servo_{}",
+                            self.name,
+                            self.servos.len() as i32 + 1
+                        )));
                     }
 
                     if ui.button("Remove servo").clicked() {
@@ -227,7 +240,10 @@ impl<
 {
     pub fn new() -> Self {
         Drivetrain {
-            motors: vec![T::new(0), T::new(1)],
+            motors: vec![
+                T::new(format!("Drivetrain_motor_{}", 0)),
+                T::new(format!("Drivetrain_{}", 1)),
+            ],
             drivetrain_type: DrivetrainType::Mecanum,
             servos: vec![],
             name: "Drivetrain".to_string(),

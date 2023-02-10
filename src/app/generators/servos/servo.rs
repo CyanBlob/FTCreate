@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use strum_macros::EnumIter;
 
@@ -7,7 +7,7 @@ use crate::app::generators::generator::Generator;
 #[derive(Copy, PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord, EnumIter)]
 pub enum ServoDirection {
     FORWARD,
-    REVERSE
+    REVERSE,
 }
 
 #[derive(Copy, PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord, EnumIter)]
@@ -17,6 +17,6 @@ pub enum ServoMode {
 }
 
 pub trait ServoGenerator: Servo + Generator {
-    fn new(id: i32) -> Self;
+    fn new(name: String) -> Self;
 }
 pub trait Servo {}

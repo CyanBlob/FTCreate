@@ -5,7 +5,7 @@ use strum::IntoEnumIterator;
 use super::super::generator;
 use super::motor;
 
-use crate::app::generators::{self, drivetrain::drivetrain::DrivetrainType, motors, generator::GeneratorSerialize};
+use crate::app::generators::{self, drivetrain::drivetrain::DrivetrainType, motors, generator::GeneratorSerialize, method::Method};
 
 use motor::*;
 
@@ -26,6 +26,11 @@ impl DcMotor {}
 impl GeneratorSerialize for DcMotor {}
 
 impl generator::Generator for DcMotor {
+
+    fn get_methods(&self) -> Vec<Method> {
+        vec![Method{name: "setPower".to_string(), numArgs: 1}]
+    }
+
     fn generate_includes(&self) -> String {
         "\
         import com.qualcomm.robotcore.hardware.DcMotor;\n\
@@ -228,14 +233,14 @@ impl Motor for DcMotor {
 }
 
 impl MotorGenerator for DcMotor {
-    fn new(id: i32) -> Self {
+    fn new(name: String) -> Self {
         DcMotor {
             direction: generators::motors::motor::MotorDirection::FORWARD,
             mode: generators::motors::motor::MotorMode::RUN_TO_POSITION,
             max_speed: 1.0,
             mecanum_position: MecanumPosition::FrontLeft,
             tank_position: TankPosition::Left,
-            name: format!("Motor_{}", id),
+            name: name,
             positions: vec![],
             drivetrain_type: None,
         }
