@@ -28,7 +28,7 @@ impl GeneratorSerialize for DcMotor {}
 impl generator::Generator for DcMotor {
 
     fn get_methods(&self) -> Vec<Method> {
-        vec![Method{name: "setPower".to_string(), numArgs: 1}]
+        vec![Method{name: "setPower".to_string(), num_args: 1}]
     }
 
     fn generate_includes(&self) -> String {

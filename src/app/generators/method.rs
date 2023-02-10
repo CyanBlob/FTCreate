@@ -1,4 +1,4 @@
 pub struct Method {
     pub name: String,
-    pub numArgs: i32,
+    pub num_args: i32,
 }

@@ -57,7 +57,7 @@ impl generator::Generator for RevServo {
     fn get_methods(&self) -> Vec<Method> {
         vec![Method {
             name: "setPower".to_string(),
-            numArgs: 1,
+            num_args: 1,
         }]
     }
 
