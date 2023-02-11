@@ -65,14 +65,26 @@ impl TemplateApp {
     pub fn generate_code(&mut self) {
         let mut new_code = String::new();
 
-        new_code += "package org.firstinspires.ftc.teamcode;\n\n";
+        new_code += "package org.firstinspires.ftc.teamcode;\n";
 
         // includes
-        new_code += &self.drivetrain.generate_includes();
+        let mut includes = self.drivetrain.generate_includes().to_string();
 
         self.subsystems.iter().for_each(|subsystem| {
-            new_code += &subsystem.generate_includes();
+            includes += &subsystem.generate_includes().to_string();
         });
+        
+        // remove duplicate includes
+        let mut includes_collection = includes.lines().collect::<Vec::<&str>>();
+        includes_collection.sort();
+        includes_collection.dedup();
+        
+        for include in includes_collection {
+            new_code += &include;
+            new_code += "\n";
+        }
+
+        new_code += "\n";
 
         new_code += r#"@TeleOp(name="EasyFTC Teleop", group="Linear Opmode")"#;
         new_code += "\n";
