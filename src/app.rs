@@ -73,12 +73,12 @@ impl TemplateApp {
         self.subsystems.iter().for_each(|subsystem| {
             includes += &subsystem.generate_includes().to_string();
         });
-        
+
         // remove duplicate includes
-        let mut includes_collection = includes.lines().collect::<Vec::<&str>>();
+        let mut includes_collection = includes.lines().collect::<Vec<&str>>();
         includes_collection.sort();
         includes_collection.dedup();
-        
+
         for include in includes_collection {
             new_code += &include;
             new_code += "\n";

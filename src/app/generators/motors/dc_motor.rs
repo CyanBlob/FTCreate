@@ -1,3 +1,6 @@
+use egui::{widgets::ImageButton, Vec2};
+use egui_extras::RetainedImage;
+
 use serde::{Deserialize, Serialize};
 
 use strum::IntoEnumIterator;
@@ -5,7 +8,10 @@ use strum::IntoEnumIterator;
 use super::super::generator;
 use super::motor;
 
-use crate::app::generators::{self, drivetrain::drivetrain::DrivetrainType, motors, generator::GeneratorSerialize, method::Method};
+use crate::app::generators::{
+    self, drivetrain::drivetrain::DrivetrainType, generator::GeneratorSerialize, method::Method,
+    motors,
+};
 
 use motor::*;
 
@@ -26,9 +32,11 @@ impl DcMotor {}
 impl GeneratorSerialize for DcMotor {}
 
 impl generator::Generator for DcMotor {
-
     fn get_methods(&self) -> Vec<Method> {
-        vec![Method{name: "setPower".to_string(), num_args: 1}]
+        vec![Method {
+            name: "setPower".to_string(),
+            num_args: 1,
+        }]
     }
 
     fn generate_includes(&self) -> String {
@@ -45,14 +53,19 @@ impl generator::Generator for DcMotor {
             "\t// {} globals\n\tprivate DcMotorEx {} = null;\n\n",
             &self.name, &self.name
         );
-            
+
         if self.mode == MotorMode::RUN_TO_POSITION {
             for i in 0..self.positions.len() {
-                code += &format!("\tprivate int {}_pos_{} = {};\n", self.name, i, self.positions.iter().nth(i).unwrap());
+                code += &format!(
+                    "\tprivate int {}_pos_{} = {};\n",
+                    self.name,
+                    i,
+                    self.positions.iter().nth(i).unwrap()
+                );
             }
             code += &"\n";
         }
-        
+
         code
     }
 
@@ -75,24 +88,24 @@ impl generator::Generator for DcMotor {
     fn generate_loop(&self) -> String {
         match self.drivetrain_type {
         Some(DrivetrainType::Mecanum) => match self.mecanum_position {
-            MecanumPosition::FrontLeft => 
+            MecanumPosition::FrontLeft =>
                 format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive - strafe + turn, -{}, {}));\n\n",
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive - strafe + turn, -{}, {}));\n\n",
                     &self.name, &self.name, self.max_speed, self.max_speed
                 ),
-            MecanumPosition::FrontRight => 
+            MecanumPosition::FrontRight =>
                 format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive + strafe - turn, -{}, {}));\n\n",
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive + strafe - turn, -{}, {}));\n\n",
                     &self.name, &self.name, self.max_speed, self.max_speed
                 ),
             MecanumPosition::RearLeft =>
                 format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive + strafe + turn, -{}, {}));\n\n",
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive + strafe + turn, -{}, {}));\n\n",
                     &self.name, &self.name, self.max_speed, self.max_speed
                 ),
-            MecanumPosition::RearRight => 
+            MecanumPosition::RearRight =>
                 format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive - strafe - turn, -{}, {}));\n\n",
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive - strafe - turn, -{}, {}));\n\n",
                     &self.name, &self.name, self.max_speed, self.max_speed
                 ),
         }
@@ -150,16 +163,18 @@ impl generator::Generator for DcMotor {
 
         ui.add_space(20.0);
 
-        ui.add(egui::Slider::new(&mut self.max_speed, 0.0..=max_speed).text("Max speed").max_decimals(2));
+        ui.add(
+            egui::Slider::new(&mut self.max_speed, 0.0..=max_speed)
+                .text("Max speed")
+                .max_decimals(2),
+        );
 
         ui.add_space(20.0);
-        
+
         if let Some(drivetrain_type) = self.drivetrain_type {
             if drivetrain_type == DrivetrainType::Mecanum {
                 self.render_mecanum(ui, id);
-            }
-
-            else if drivetrain_type == DrivetrainType::Tank {
+            } else if drivetrain_type == DrivetrainType::Tank {
                 self.render_tank(ui, id);
             }
         }
@@ -167,70 +182,96 @@ impl generator::Generator for DcMotor {
         if self.mode == MotorMode::RUN_TO_POSITION {
             self.render_positions(ui, id);
         }
-
     }
 }
 
 impl DcMotor {
     fn render_positions(&mut self, ui: &mut egui::Ui, _id: usize) {
-                ui.add_space(10.0);
-                ui.label("Fixed positions");
-                
-                let mut removed_positions = vec![];
+        ui.add_space(10.0);
+        ui.label("Fixed positions");
 
-                for i in 0..self.positions.len() {
-                    ui.horizontal(|ui| {
-                        ui.add(egui::Slider::new(self.positions.iter_mut().nth(i).unwrap(), 0..=5000).text("Position").step_by(25.0).max_decimals(2));
-                        
-                            if ui.button("Delete").clicked() {
-                                removed_positions.push(i);
-                            }
-                        });
+        let mut removed_positions = vec![];
+
+        for i in 0..self.positions.len() {
+            ui.horizontal(|ui| {
+                ui.add(
+                    egui::Slider::new(self.positions.iter_mut().nth(i).unwrap(), 0..=5000)
+                        .text("Position")
+                        .step_by(25.0)
+                        .max_decimals(2),
+                );
+
+                if ui.button("Delete").clicked() {
+                    removed_positions.push(i);
                 }
-                
-                for i in removed_positions {
-                    self.positions.remove(i);
+
+                // TODO: Don't load texture every frame
+                let image = RetainedImage::from_image_bytes(
+                    "gamepad.png".to_string(),
+                    include_bytes!("../../../../resources/gamepad_white.png"),
+                )
+                .unwrap();
+
+                let button = ImageButton::new(
+                    image.texture_id(ui.ctx()),
+                    Vec2 {
+                        x: 16.0,
+                        y: 16.0 * 0.774,
+                    },
+                );
+                if ui.add(button).clicked() {
+                    println!("Keybinding button!");
                 }
+            });
+        }
 
-                ui.horizontal(|ui| {
-                    if ui.button("Add position").clicked() {
-                        self.positions.push(0);
-                    }
+        for i in removed_positions {
+            self.positions.remove(i);
+        }
 
-                });
+        ui.horizontal(|ui| {
+            if ui.button("Add position").clicked() {
+                self.positions.push(0);
+            }
+        });
     }
 
     fn render_mecanum(&mut self, ui: &mut egui::Ui, id: usize) {
-                ui.push_id(id + 100, |ui| {
-                    egui::ComboBox::from_label("Mecanum position")
-                        .selected_text(format!("{:?}", &mut self.mecanum_position))
-                        .width(170.0)
-                        .show_ui(ui, |ui| {
-                            for position in MecanumPosition::iter() {
-                                ui.selectable_value(&mut self.mecanum_position, position, format!("{:?}", position));
-                            }
-                        });
+        ui.push_id(id + 100, |ui| {
+            egui::ComboBox::from_label("Mecanum position")
+                .selected_text(format!("{:?}", &mut self.mecanum_position))
+                .width(170.0)
+                .show_ui(ui, |ui| {
+                    for position in MecanumPosition::iter() {
+                        ui.selectable_value(
+                            &mut self.mecanum_position,
+                            position,
+                            format!("{:?}", position),
+                        );
+                    }
                 });
-                
-                
+        });
     }
 
     fn render_tank(&mut self, ui: &mut egui::Ui, id: usize) {
-                ui.push_id(id + 100, |ui| {
-                    egui::ComboBox::from_label("Tank position")
-                        .selected_text(format!("{:?}", &mut self.tank_position))
-                        .width(170.0)
-                        .show_ui(ui, |ui| {
-                            for position in TankPosition::iter() {
-                                ui.selectable_value(&mut self.tank_position, position, format!("{:?}", position));
-                            }
-                        });
+        ui.push_id(id + 100, |ui| {
+            egui::ComboBox::from_label("Tank position")
+                .selected_text(format!("{:?}", &mut self.tank_position))
+                .width(170.0)
+                .show_ui(ui, |ui| {
+                    for position in TankPosition::iter() {
+                        ui.selectable_value(
+                            &mut self.tank_position,
+                            position,
+                            format!("{:?}", position),
+                        );
+                    }
                 });
+        });
     }
 }
 
-impl Motor for DcMotor {
-}
+impl Motor for DcMotor {}
 
 impl MotorGenerator for DcMotor {
     fn new(name: String) -> Self {

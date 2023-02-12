@@ -1,5 +1,5 @@
 use egui::text::LayoutJob;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// View some code with syntax highlighting and selection.
 pub fn code_view_ui(ui: &mut egui::Ui, mut code: &str) {
@@ -178,7 +178,7 @@ impl CodeTheme {
     pub fn dark() -> Self {
         Self {
             dark_mode: true,
-            syntect_theme: SyntectTheme:: Base16MochaDark,
+            syntect_theme: SyntectTheme::Base16MochaDark,
         }
     }
 
@@ -515,4 +515,3 @@ fn is_keyword(word: &str) -> bool {
             | "private"
     )
 }
-

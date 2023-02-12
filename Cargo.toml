@@ -14,6 +14,9 @@ ftc_http = "2"
 serde_json = "1.0.89"
 
 egui = {version = "0.20.0"}
+egui_extras = {version = "0.20.0", features = ["image"]}
+image = { version = "0.24", default-features = false, features = ["png"] }
+
 eframe = { version = "0.20.0", default-features = false, features = [
     "accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts", # Embed the default egui fonts.
