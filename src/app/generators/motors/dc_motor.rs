@@ -9,7 +9,7 @@ use super::super::generator;
 use super::motor;
 
 use crate::app::generators::{
-    self, drivetrain::drivetrain::DrivetrainType, generator::GeneratorSerialize, method::Method,
+    self, subsystem::subsystem::DrivetrainType, generator::GeneratorSerialize, method::Method,
     motors,
 };
 

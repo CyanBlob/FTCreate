@@ -1,11 +1,20 @@
 use crate::app::generators::{
     generator::{self, SubsystemGenerator},
     method::Method,
-    motors::{dc_motor::DcMotor, motor::MotorGenerator},
+    motors::motor::MotorGenerator,
     servos::servo::ServoGenerator,
 };
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
+
+#[derive(
+    Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, EnumIter, PartialOrd, Copy,
+)]
+
+pub enum DrivetrainType {
+    Mecanum,
+    Tank,
+}
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Subsystem<
@@ -14,6 +23,8 @@ pub struct Subsystem<
 > {
     pub motors: Vec<T>,
     pub servos: Vec<U>,
+    pub is_drivetrain: bool,
+    pub drivetrain_type: DrivetrainType,
     pub name: String,
 }
 
@@ -61,6 +72,7 @@ impl<
                 code += &motor.generate_init();
             });
         }
+
         if self.servos.len() > 0 as usize {
             self.servos.iter().for_each(|servos| {
                 code += &servos.generate_init();
@@ -70,7 +82,17 @@ impl<
     }
 
     fn generate_loop_one_time_setup(&self) -> String {
-        let mut code = "".to_string();
+        let mut code: String = "".to_owned();
+        if self.is_drivetrain {
+            code += &format!("\t\t\t// Drivetrain one time setup\n\t\t\tdouble drive  = -gamepad1.left_stick_y*driveSpeed;  // forwards and backwards movement\n\
+        \t\t\tdouble turn   =  gamepad1.right_stick_x*turnSpeed;  // rotation\n");
+
+            if self.drivetrain_type == DrivetrainType::Mecanum {
+                code += &format!("\t\t\tdouble strafe = -gamepad1.left_stick_x*driveSpeed;  // side to side movement\n");
+            }
+            code += "\n";
+        }
+
         if self.motors.len() > 0 as usize {
             self.motors.iter().for_each(|motor| {
                 code += &motor.generate_loop_one_time_setup();
@@ -102,14 +124,36 @@ impl<
         }
         code
     }
+
     fn render_options(&mut self, ui: &mut egui::Ui, _id: usize) {
         egui::scroll_area::ScrollArea::vertical()
             .auto_shrink([true; 2])
             .show(ui, |ui| {
-                ui.add_space(30.0);
+                ui.add_space(20.0);
+
+                if self.is_drivetrain {
+                    egui::ComboBox::from_label("Drivetrain type")
+                        .selected_text(format!("{:?}", &mut self.drivetrain_type))
+                        .width(170.0)
+                        .show_ui(ui, |ui| {
+                            for mode in DrivetrainType::iter() {
+                                ui.selectable_value(
+                                    &mut self.drivetrain_type,
+                                    mode,
+                                    format!("{:?}", mode),
+                                );
+                            }
+                        });
+
+                    self.motors.iter_mut().for_each(|motor| {
+                        motor.set_drivetrain_type(Some(self.drivetrain_type));
+                    });
+                }
 
                 let mut added_motors = 0;
                 let num_columns = 2;
+
+                ui.add_space(30.0);
 
                 ui.horizontal(|ui| {
                     ui.heading("Motors");
@@ -129,7 +173,7 @@ impl<
 
                 ui.add_space(10.0);
 
-                egui::Grid::new("Subsystem motors grid").show(ui, |ui| {
+                egui::Grid::new("Drivetrain motors grid").show(ui, |ui| {
                     self.motors.iter_mut().enumerate().for_each(|(id, motor)| {
                         added_motors += 1;
                         ui.vertical(|ui| {
@@ -144,7 +188,7 @@ impl<
                     });
                 });
 
-                added_motors = 0;
+                ui.add_space(30.0);
 
                 ui.horizontal(|ui| {
                     ui.heading("Servos");
@@ -162,6 +206,9 @@ impl<
                     }
                 });
 
+                ui.add_space(10.0);
+
+                added_motors = 0;
                 egui::Grid::new("Servos grid").show(ui, |ui| {
                     self.servos.iter_mut().enumerate().for_each(|(id, servo)| {
                         added_motors += 1;
@@ -185,14 +232,6 @@ impl<
         U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
     > SubsystemGenerator for Subsystem<T, U>
 {
-    /*fn new() -> Self {
-        Subsystem {
-            motors: vec![T::new(), T::new()],
-            servos: vec![],
-            name: "Subsystem".to_string(),
-        }
-    }*/
-
     fn get_name(&self) -> String {
         self.name.to_string()
     }
@@ -203,14 +242,16 @@ impl<
         U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
     > Subsystem<T, U>
 {
-    pub fn new(name: String) -> Self {
+    pub fn new(name: String, is_drivetrain: bool) -> Self {
         Subsystem {
             motors: vec![
                 T::new(format!("{}_motor_{}", name, 0)),
-                T::new(format!("{}_motor_{}", name, 1)),
+                T::new(format!("{}_{}", name, 1)),
             ],
+            drivetrain_type: DrivetrainType::Mecanum,
             servos: vec![],
-            name: name,
+            is_drivetrain,
+            name: name.to_string(),
         }
     }
 }

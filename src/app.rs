@@ -3,9 +3,9 @@ use std::rc::Rc;
 use crate::app::generators::generator::Generator;
 pub mod generators;
 
-use generators::drivetrain;
+//use generators::drivetrain;
 
-use crate::app::drivetrain::drivetrain::Drivetrain;
+//use crate::app::drivetrain::drivetrain::Drivetrain;
 //use crate::app::subsystem::subsystem::Subsystem;
 use generators::motors::dc_motor::DcMotor;
 use generators::servos::rev_servo::RevServo;
@@ -24,7 +24,7 @@ pub struct TemplateApp {
     // Example stuff:
     label: String,
 
-    drivetrain: Drivetrain<DcMotor, RevServo>,
+    drivetrain: Subsystem<DcMotor, RevServo>,
     subsystems: Vec<Subsystem<DcMotor, RevServo>>,
     code: String,
 
@@ -37,7 +37,7 @@ impl Default for TemplateApp {
         Self {
             // Example stuff:
             label: "Hello World!".to_owned(),
-            drivetrain: Drivetrain::new(),
+            drivetrain: Subsystem::new("Drivetrain".to_owned(), true),
             subsystems: vec![],
             code: "Click \"GENERATE!\"".to_string(),
             visible: 0,
@@ -200,10 +200,11 @@ impl eframe::App for TemplateApp {
                         });
 
                     if ui.button("Add subsystem").clicked() {
+                        // TODO: Convert Drivetrain to Subsystem
                         self.subsystems.push(Subsystem::new(format!(
                             "Subsystem_{}",
                             self.subsystems.len() as i32 + 1
-                        )));
+                        ), false));
                         self.visible = self.subsystems.len();
                     }
                 });
