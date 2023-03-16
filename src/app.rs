@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::app::generators::generator::Generator;
 pub mod generators;
@@ -12,8 +13,11 @@ use generators::servos::rev_servo::RevServo;
 
 use self::generators::generator::{GeneratorSerialize, SubsystemGenerator};
 use self::generators::subsystem::subsystem::Subsystem;
+use self::theme::Theme;
 
 pub mod syntax_highlighting;
+
+pub mod theme;
 
 const MAX_PANEL_WIDTH: f32 = 650.0;
 
@@ -53,12 +57,15 @@ impl TemplateApp {
 
         //cc.egui_ctx.set_visuals(egui::Visuals::light());
 
+        let theme: Theme = Theme::new(&crate::config::AppStyle::default());
+        cc.egui_ctx.set_visuals(theme.visuals);
+
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         }
-
+        
         Default::default()
     }
 
@@ -148,8 +155,7 @@ impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // For inspiration and more examples, go to https://emilk.github.io/egui
-
+        
         let mut width: f32 = 0.0;
 
         //#[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
