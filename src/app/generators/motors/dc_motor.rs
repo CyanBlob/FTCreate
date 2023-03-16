@@ -9,8 +9,8 @@ use super::super::generator;
 use super::motor;
 
 use crate::app::generators::{
-    self, subsystem::subsystem::DrivetrainType, generator::GeneratorSerialize, method::Method,
-    motors,
+    self, generator::GeneratorSerialize, method::Method, motors,
+    subsystem::subsystem::DrivetrainType,
 };
 
 use motor::*;
@@ -21,7 +21,7 @@ pub struct DcMotor {
     pub mode: motors::motor::MotorMode,
     pub max_speed: f64,
     pub mecanum_position: motors::motor::MecanumPosition,
-    pub tank_position: motors::motor::TankPosition,
+    pub arcade_position: motors::motor::ArcadePosition,
     pub name: String,
     pub positions: Vec<i32>,
     pub drivetrain_type: Option<DrivetrainType>,
@@ -109,16 +109,30 @@ impl generator::Generator for DcMotor {
                     &self.name, &self.name, self.max_speed, self.max_speed
                 ),
         }
-            Some(DrivetrainType::Tank) => {
-                match self.tank_position {
-                    TankPosition::Left => {
+            Some(DrivetrainType::Arcade) => {
+                match self.arcade_position {
+                    ArcadePosition::Left => {
                 format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive + turn, -{}, {}));\n\n",
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive + turn, -{}, {}));\n\n",
                     &self.name, &self.name, self.max_speed, self.max_speed
                 )},
-                    TankPosition::Right => {
+                    ArcadePosition::Right => {
                 format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive - turn, -{}, {}));\n\n",
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive - turn, -{}, {}));\n\n",
+                    &self.name, &self.name, self.max_speed, self.max_speed
+                )},
+                    }
+                },
+            Some(DrivetrainType::Tank) => {
+                match self.arcade_position {
+                    ArcadePosition::Left => {
+                format!(
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(driveLeft, -{}, {}));\n\n",
+                    &self.name, &self.name, self.max_speed, self.max_speed
+                )},
+                    ArcadePosition::Right => {
+                format!(
+                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(driveRight, -{}, {}));\n\n",
                     &self.name, &self.name, self.max_speed, self.max_speed
                 )},
                     }
@@ -174,8 +188,8 @@ impl generator::Generator for DcMotor {
         if let Some(drivetrain_type) = self.drivetrain_type {
             if drivetrain_type == DrivetrainType::Mecanum {
                 self.render_mecanum(ui, id);
-            } else if drivetrain_type == DrivetrainType::Tank {
-                self.render_tank(ui, id);
+            } else {
+                self.render_arcade(ui, id);
             }
         }
 
@@ -253,15 +267,15 @@ impl DcMotor {
         });
     }
 
-    fn render_tank(&mut self, ui: &mut egui::Ui, id: usize) {
+    fn render_arcade(&mut self, ui: &mut egui::Ui, id: usize) {
         ui.push_id(id + 100, |ui| {
-            egui::ComboBox::from_label("Tank position")
-                .selected_text(format!("{:?}", &mut self.tank_position))
+            egui::ComboBox::from_label(format!("{:?} position", self.drivetrain_type.unwrap()))
+                .selected_text(format!("{:?}", &mut self.arcade_position))
                 .width(170.0)
                 .show_ui(ui, |ui| {
-                    for position in TankPosition::iter() {
+                    for position in ArcadePosition::iter() {
                         ui.selectable_value(
-                            &mut self.tank_position,
+                            &mut self.arcade_position,
                             position,
                             format!("{:?}", position),
                         );
@@ -280,7 +294,7 @@ impl MotorGenerator for DcMotor {
             mode: generators::motors::motor::MotorMode::RUN_TO_POSITION,
             max_speed: 1.0,
             mecanum_position: MecanumPosition::FrontLeft,
-            tank_position: TankPosition::Left,
+            arcade_position: ArcadePosition::Left,
             name: name,
             positions: vec![],
             drivetrain_type: None,

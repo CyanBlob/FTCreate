@@ -27,7 +27,7 @@ pub enum MecanumPosition {
 }
 
 #[derive(Copy, PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord, EnumIter)]
-pub enum TankPosition {
+pub enum ArcadePosition {
     Left,
     Right,
 }
