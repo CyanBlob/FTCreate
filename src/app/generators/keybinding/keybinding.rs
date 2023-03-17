@@ -2,6 +2,7 @@ use super::super::generator;
 
 struct Keybinding {}
 
+#[allow(unused)]
 pub enum BooleanButton {
     A,
     B,
@@ -15,6 +16,7 @@ pub enum BooleanButton {
     Back,
 }
 
+#[allow(unused)]
 pub enum Axis {
     LeftTrigger,
     RightTrigger,
@@ -29,5 +31,5 @@ impl generator::Generator for Keybinding {
         vec![]
     }
 
-    fn render_options(&mut self, ui: &mut egui::Ui, id: usize) {}
+    fn render_options(&mut self, _ui: &mut egui::Ui, _id: usize) {}
 }

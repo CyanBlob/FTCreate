@@ -21,22 +21,21 @@ impl Theme {
 
         // hovered elements
         visuals.widgets.hovered.bg_fill = cfg.accent_blue;
-        
+
         // used in text edits
         visuals.widgets.inactive.fg_stroke.color = cfg.input_text_color;
         visuals.widgets.inactive.rounding = cfg.dropdown_rounding;
 
         visuals.widgets.inactive.bg_fill = cfg.accent_blue;
-        
+
         // dropdown "buttons"
         visuals.widgets.inactive.bg_fill = cfg.bg_light;
 
         // dropdown backdrops
         visuals.window_fill = cfg.bg_light;
-        
+
         // background
         visuals.panel_fill = cfg.bg;
-        
 
         let mut slider = Style {
             visuals: visuals.clone(),
@@ -68,17 +67,5 @@ impl Theme {
             slider,
             checkbox,
         }
-    }
-
-    pub fn visuals(&self) -> &Visuals {
-        &self.visuals
-    }
-
-    pub fn slider(&self) -> &Style {
-        &self.slider
-    }
-
-    pub fn checkbox(&self) -> &Style {
-        &self.checkbox
     }
 }

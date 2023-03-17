@@ -14,7 +14,7 @@ use strum_macros::EnumIter;
 pub enum DrivetrainType {
     Mecanum,
     Arcade,
-    Tank
+    Tank,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -95,7 +95,7 @@ impl<
                 DrivetrainType::Arcade => {
                     code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble drive  = -gamepad1.left_stick_y*driveSpeed;  // forwards and backwards movement\n\
                     \t\t\tdouble turn   =  gamepad1.right_stick_x*turnSpeed;  // rotation\n");
-                },
+                }
                 DrivetrainType::Tank => {
                     code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble driveLeft  = -gamepad1.left_stick_y*driveSpeed;  // left motors movement\n\
                     \t\t\tdouble driveRight   =  -gamepad1.right_stick_y*driveSpeed;  // right motors movement\n");

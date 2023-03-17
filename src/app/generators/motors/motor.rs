@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use strum_macros::EnumIter;
 
-use crate::app::generators::{subsystem::subsystem::DrivetrainType, generator::Generator};
+use crate::app::generators::{generator::Generator, subsystem::subsystem::DrivetrainType};
 
 #[derive(Copy, PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord, EnumIter)]
 pub enum MotorDirection {

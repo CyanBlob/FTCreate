@@ -55,6 +55,7 @@ enum TokenType {
 #[cfg(feature = "syntect")]
 #[derive(Clone, Copy, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[allow(unused)]
 enum SyntectTheme {
     Base16EightiesDark,
     Base16MochaDark,
@@ -67,6 +68,7 @@ enum SyntectTheme {
 
 #[cfg(feature = "syntect")]
 impl SyntectTheme {
+    #[allow(unused)]
     fn all() -> impl ExactSizeIterator<Item = Self> {
         [
             Self::Base16EightiesDark,
@@ -81,6 +83,7 @@ impl SyntectTheme {
         .copied()
     }
 
+    #[allow(unused)]
     fn name(&self) -> &'static str {
         match self {
             Self::Base16EightiesDark => "Base16 Eighties (dark)",
@@ -105,6 +108,7 @@ impl SyntectTheme {
         }
     }
 
+    #[allow(unused)]
     pub fn is_dark(&self) -> bool {
         match self {
             Self::Base16EightiesDark
@@ -144,6 +148,7 @@ impl Default for CodeTheme {
 }
 
 impl CodeTheme {
+    #[allow(unused)]
     pub fn from_style(style: &egui::Style) -> Self {
         if style.visuals.dark_mode {
             Self::dark()
@@ -164,6 +169,7 @@ impl CodeTheme {
         }
     }
 
+    #[allow(unused)]
     pub fn store_in_memory(self, ctx: &egui::Context) {
         if self.dark_mode {
             ctx.data().insert_persisted(egui::Id::new("dark"), self);
@@ -189,6 +195,7 @@ impl CodeTheme {
         }
     }
 
+    #[allow(unused)]
     pub fn ui(&mut self, ui: &mut egui::Ui) {
         egui::widgets::global_dark_light_mode_buttons(ui);
 
@@ -366,7 +373,7 @@ impl Highlighter {
                 let underline = if underline {
                     egui::Stroke::new(1.0, text_color)
                 } else {
-                    egui::Stroke::none()
+                    egui::Stroke::NONE
                 };
                 job.sections.push(LayoutSection {
                     leading_space: 0.0,

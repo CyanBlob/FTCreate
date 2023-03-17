@@ -1,6 +1,3 @@
-use std::rc::Rc;
-use std::sync::Arc;
-
 use crate::app::generators::generator::Generator;
 pub mod generators;
 
@@ -11,7 +8,7 @@ pub mod generators;
 use generators::motors::dc_motor::DcMotor;
 use generators::servos::rev_servo::RevServo;
 
-use self::generators::generator::{GeneratorSerialize, SubsystemGenerator};
+use self::generators::generator::SubsystemGenerator;
 use self::generators::subsystem::subsystem::Subsystem;
 use self::theme::Theme;
 
@@ -51,7 +48,7 @@ impl Default for TemplateApp {
 
 impl TemplateApp {
     /// Called once before the first frame.
-    pub fn new(cc: &eframe::CreationContext) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
 
@@ -65,7 +62,7 @@ impl TemplateApp {
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         }
-        
+
         Default::default()
     }
 
@@ -147,15 +144,13 @@ impl TemplateApp {
 }
 
 impl eframe::App for TemplateApp {
-    /// Called by the frame work to save state before shutdown.
+    /// Called by the framework to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, eframe::APP_KEY, self);
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
-    /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        
         let mut width: f32 = 0.0;
 
         //#[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
@@ -206,17 +201,15 @@ impl eframe::App for TemplateApp {
                         });
 
                     if ui.button("Add subsystem").clicked() {
-                        // TODO: Convert Drivetrain to Subsystem
-                        self.subsystems.push(Subsystem::new(format!(
-                            "Subsystem_{}",
-                            self.subsystems.len() as i32 + 1
-                        ), false));
+                        self.subsystems.push(Subsystem::new(
+                            format!("Subsystem_{}", self.subsystems.len() as i32 + 1),
+                            false,
+                        ));
                         self.visible = self.subsystems.len();
                     }
                 });
             });
 
-            // The central panel the region left after adding TopPanel's and SidePanel's
             ui.add_space(30.0);
 
             if self.visible == 0 {

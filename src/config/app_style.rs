@@ -1,6 +1,6 @@
 use eframe::egui::Color32;
+use eframe::egui::Rounding;
 use serde::{Deserialize, Serialize};
-use eframe::egui::{Style, Visuals, Rounding};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AppStyle {
@@ -19,7 +19,7 @@ pub struct AppStyle {
 
     pub accent_blue: Color32,
     pub accent_yellow: Color32,
-    
+
     pub text_color: Color32,
     pub input_text_color: Color32,
 
@@ -47,7 +47,7 @@ impl Default for AppStyle {
 
             text_color: Color32::from_rgb(255, 255, 255),
             input_text_color: Color32::from_rgb(200, 200, 200),
-                
+
             dropdown_rounding: 3.0.into(),
         }
     }
