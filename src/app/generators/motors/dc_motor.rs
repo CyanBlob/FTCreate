@@ -9,7 +9,11 @@ use super::super::generator;
 use super::motor;
 
 use crate::app::generators::{
-    self, generator::GeneratorSerialize, method::Method, motors,
+    self,
+    generator::GeneratorSerialize,
+    keybinding::keybinding::{BooleanButton, Keybinding},
+    method::Method,
+    motors,
     subsystem::subsystem::DrivetrainType,
 };
 
@@ -23,7 +27,7 @@ pub struct DcMotor {
     pub mecanum_position: motors::motor::MecanumPosition,
     pub arcade_position: motors::motor::ArcadePosition,
     pub name: String,
-    pub positions: Vec<i32>,
+    pub positions: Vec<Keybinding>,
     pub drivetrain_type: Option<DrivetrainType>,
 }
 
@@ -60,7 +64,7 @@ impl generator::Generator for DcMotor {
                     "\tprivate int {}_pos_{} = {};\n",
                     self.name,
                     i,
-                    self.positions.iter().nth(i).unwrap()
+                    self.positions.iter().nth(i).unwrap().value
                 );
             }
             code += &"\n";
@@ -86,7 +90,7 @@ impl generator::Generator for DcMotor {
     }
 
     fn generate_loop(&self) -> String {
-        match self.drivetrain_type {
+        let mut code = match self.drivetrain_type {
         Some(DrivetrainType::Mecanum) => match self.mecanum_position {
             MecanumPosition::FrontLeft =>
                 format!(
@@ -108,7 +112,7 @@ impl generator::Generator for DcMotor {
                     "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive - strafe - turn, -{}, {}));\n\n",
                     &self.name, &self.name, self.max_speed, self.max_speed
                 ),
-        }
+        },
             Some(DrivetrainType::Arcade) => {
                 match self.arcade_position {
                     ArcadePosition::Left => {
@@ -138,7 +142,25 @@ impl generator::Generator for DcMotor {
                     }
                 }
             None => "".to_string(),
-    }
+    };
+        // generate keybindings
+        for i in 0..self.positions.len() {
+            if self.positions.iter().nth(i).unwrap().button != None {
+                code += &format!(
+                    "\t\t\tif (driveController.buttonJustPressed({:?}) {{\n",
+                    &self.positions.iter().nth(i).unwrap().button.unwrap()
+                );
+
+                code += &format!(
+                    "\t\t\t\t{}.runToPosition({});\n",
+                    self.name,
+                    self.positions.iter().nth(i).unwrap().value
+                );
+
+                code += &"\t\t\t}\n";
+            }
+        }
+        code
     }
 
     fn render_options(&mut self, ui: &mut egui::Ui, id: usize) {
@@ -206,10 +228,10 @@ impl DcMotor {
 
         let mut removed_positions = vec![];
 
-        for i in 0..self.positions.len() {
+        for (i, pos) in self.positions.iter_mut().enumerate() {
             ui.horizontal(|ui| {
                 ui.add(
-                    egui::Slider::new(self.positions.iter_mut().nth(i).unwrap(), 0..=5000)
+                    egui::Slider::new(&mut pos.value, 0..=5000)
                         .text("Position")
                         .step_by(25.0)
                         .max_decimals(2),
@@ -219,10 +241,9 @@ impl DcMotor {
                     removed_positions.push(i);
                 }
 
-                // TODO: Don't load texture every frame
                 let image = RetainedImage::from_image_bytes(
                     "gamepad.png".to_string(),
-                    include_bytes!("../../../../resources/gamepad_white.png"),
+                    crate::app::generators::keybinding::keybinding::GAMEPAD_IMAGE,
                 )
                 .unwrap();
 
@@ -235,9 +256,48 @@ impl DcMotor {
                 );
                 if ui.add(button).clicked() {
                     println!("Keybinding button!");
+                    pos.button = Some(BooleanButton::A);
+                    //self.keybindings.push("Test keybinding".to_string());
                 }
             });
         }
+
+        /*for i in 0..self.positions.len() {
+            ui.horizontal(|ui| {
+                ui.add(
+                    egui::Slider::new(
+                        &mut self.positions.iter_mut().nth(i).unwrap().value,
+                        0..=5000,
+                    )
+                    .text("Position")
+                    .step_by(25.0)
+                    .max_decimals(2),
+                );
+
+                if ui.button("Delete").clicked() {
+                    removed_positions.push(i);
+                }
+
+                let image = RetainedImage::from_image_bytes(
+                    "gamepad.png".to_string(),
+                    crate::app::generators::keybinding::keybinding::GAMEPAD_IMAGE,
+                )
+                .unwrap();
+
+                let button = ImageButton::new(
+                    image.texture_id(ui.ctx()),
+                    Vec2 {
+                        x: 16.0,
+                        y: 16.0 * 0.774,
+                    },
+                );
+                if ui.add(button).clicked() {
+                    println!("Keybinding button!");
+                    self.positions.into_iter().nth(i).unwrap().button = Some(BooleanButton::A);
+                    //self.keybindings.push("Test keybinding".to_string());
+                }
+            });
+        }*/
 
         for i in removed_positions {
             self.positions.remove(i);
@@ -245,7 +305,7 @@ impl DcMotor {
 
         ui.horizontal(|ui| {
             if ui.button("Add position").clicked() {
-                self.positions.push(0);
+                self.positions.push(Keybinding::new(0));
             }
         });
     }

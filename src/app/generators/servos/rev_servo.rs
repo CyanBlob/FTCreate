@@ -5,7 +5,9 @@ use strum::IntoEnumIterator;
 use super::super::generator;
 use super::servo;
 
-use crate::app::generators::{self, generator::GeneratorSerialize, method::Method, servos};
+use crate::app::generators::{
+    self, generator::GeneratorSerialize, keybinding::keybinding::Keybinding, method::Method, servos,
+};
 
 use servo::*;
 
@@ -15,6 +17,7 @@ pub struct RevServo {
     pub mode: servos::servo::ServoMode,
     pub name: String,
     pub positions: Vec<f32>,
+    pub keybindings: Vec<String>,
 }
 
 impl RevServo {
@@ -152,6 +155,7 @@ impl ServoGenerator for RevServo {
             mode: generators::servos::servo::ServoMode::Servo,
             name: name,
             positions: vec![],
+            keybindings: vec![],
         }
     }
 }
