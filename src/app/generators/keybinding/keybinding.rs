@@ -1,5 +1,6 @@
 use egui_extras::RetainedImage;
 use serde::{Deserialize, Serialize};
+use strum::EnumIter;
 
 use super::super::generator;
 
@@ -11,6 +12,7 @@ pub struct Keybinding {
     pub button: Option<BooleanButton>,
 }
 
+#[allow(unused)]
 pub struct AxisKeybinding {
     pub value: f32,
     pub axis: Option<Axis>,
@@ -35,7 +37,7 @@ impl AxisKeybinding {
 }
 
 #[allow(unused)]
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Copy, EnumIter)]
 pub enum BooleanButton {
     A,
     B,
@@ -50,7 +52,7 @@ pub enum BooleanButton {
 }
 
 #[allow(unused)]
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Copy, EnumIter)]
 pub enum Axis {
     LeftTrigger,
     RightTrigger,

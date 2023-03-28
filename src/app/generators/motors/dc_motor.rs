@@ -157,7 +157,7 @@ impl generator::Generator for DcMotor {
                     self.positions.iter().nth(i).unwrap().value
                 );
 
-                code += &"\t\t\t}\n";
+                code += &"\t\t\t}\n\n";
             }
         }
         code
@@ -229,36 +229,46 @@ impl DcMotor {
         let mut removed_positions = vec![];
 
         for (i, pos) in self.positions.iter_mut().enumerate() {
-            ui.horizontal(|ui| {
-                ui.add(
-                    egui::Slider::new(&mut pos.value, 0..=5000)
-                        .text("Position")
-                        .step_by(1.0)
-                        .max_decimals(2),
-                );
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.add(egui::Separator::default());
 
-                if ui.button("Delete").clicked() {
-                    removed_positions.push(i);
-                }
+                    ui.add(
+                        egui::Slider::new(&mut pos.value, 0..=5000)
+                            .text("Position")
+                            .step_by(1.0)
+                            .max_decimals(2),
+                    );
 
-                let image = RetainedImage::from_image_bytes(
-                    "gamepad.png".to_string(),
-                    crate::app::generators::keybinding::keybinding::GAMEPAD_IMAGE,
-                )
-                .unwrap();
+                    if ui.button("Delete").clicked() {
+                        removed_positions.push(i);
+                    }
 
-                let button = ImageButton::new(
-                    image.texture_id(ui.ctx()),
-                    Vec2 {
-                        x: 16.0,
-                        y: 16.0 * 0.774,
-                    },
-                );
-                if ui.add(button).clicked() {
-                    println!("Keybinding button!");
-                    pos.button = Some(BooleanButton::A);
-                    //self.keybindings.push("Test keybinding".to_string());
-                }
+                });
+
+                let binding_text = match pos.button {
+                    Some(b) => format!("{:?}", b),
+                    None => "None".to_owned(),
+                };
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Separator::default());
+                    ui.add_space(10.0);
+
+                    egui::ComboBox::new(format!("{}{}", &self.name, &i), "Keybinding")
+                        .selected_text(format!("{:?}", binding_text))
+                        .width(105.0)
+                        .show_ui(ui, |ui| {
+                            for button in BooleanButton::iter() {
+                                ui.selectable_value(
+                                    &mut pos.button,
+                                    Some(button),
+                                    format!("{:?}", button),
+                                );
+                            }
+                        });
+                });
+                    ui.add_space(10.0);
             });
         }
 
