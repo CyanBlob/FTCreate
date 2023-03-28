@@ -233,7 +233,7 @@ impl DcMotor {
                 ui.add(
                     egui::Slider::new(&mut pos.value, 0..=5000)
                         .text("Position")
-                        .step_by(25.0)
+                        .step_by(1.0)
                         .max_decimals(2),
                 );
 
@@ -261,43 +261,6 @@ impl DcMotor {
                 }
             });
         }
-
-        /*for i in 0..self.positions.len() {
-            ui.horizontal(|ui| {
-                ui.add(
-                    egui::Slider::new(
-                        &mut self.positions.iter_mut().nth(i).unwrap().value,
-                        0..=5000,
-                    )
-                    .text("Position")
-                    .step_by(25.0)
-                    .max_decimals(2),
-                );
-
-                if ui.button("Delete").clicked() {
-                    removed_positions.push(i);
-                }
-
-                let image = RetainedImage::from_image_bytes(
-                    "gamepad.png".to_string(),
-                    crate::app::generators::keybinding::keybinding::GAMEPAD_IMAGE,
-                )
-                .unwrap();
-
-                let button = ImageButton::new(
-                    image.texture_id(ui.ctx()),
-                    Vec2 {
-                        x: 16.0,
-                        y: 16.0 * 0.774,
-                    },
-                );
-                if ui.add(button).clicked() {
-                    println!("Keybinding button!");
-                    self.positions.into_iter().nth(i).unwrap().button = Some(BooleanButton::A);
-                    //self.keybindings.push("Test keybinding".to_string());
-                }
-            });
-        }*/
 
         for i in removed_positions {
             self.positions.remove(i);
