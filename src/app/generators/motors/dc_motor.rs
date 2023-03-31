@@ -27,7 +27,7 @@ pub struct DcMotor {
     pub mecanum_position: motors::motor::MecanumPosition,
     pub arcade_position: motors::motor::ArcadePosition,
     pub name: String,
-    pub positions: Vec<Keybinding>,
+    pub positions: Vec<Keybinding<i32>>,
     pub drivetrain_type: Option<DrivetrainType>,
 }
 
@@ -152,9 +152,8 @@ impl generator::Generator for DcMotor {
                 );
 
                 code += &format!(
-                    "\t\t\t\t{}.runToPosition({});\n",
-                    self.name,
-                    self.positions.iter().nth(i).unwrap().value
+                    "\t\t\t\t{}.runToPosition({}_pos_{});\n",
+                    self.name, self.name, i
                 );
 
                 code += &"\t\t\t}\n\n";
@@ -243,7 +242,6 @@ impl DcMotor {
                     if ui.button("Delete").clicked() {
                         removed_positions.push(i);
                     }
-
                 });
 
                 let binding_text = match pos.button {
@@ -268,7 +266,7 @@ impl DcMotor {
                             }
                         });
                 });
-                    ui.add_space(10.0);
+                ui.add_space(10.0);
             });
         }
 

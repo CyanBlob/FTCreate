@@ -6,7 +6,11 @@ use super::super::generator;
 use super::servo;
 
 use crate::app::generators::{
-    self, generator::GeneratorSerialize, keybinding::keybinding::Keybinding, method::Method, servos,
+    self,
+    generator::GeneratorSerialize,
+    keybinding::keybinding::{BooleanButton, Keybinding},
+    method::Method,
+    servos,
 };
 
 use servo::*;
@@ -16,8 +20,7 @@ pub struct RevServo {
     pub direction: servos::servo::ServoDirection,
     pub mode: servos::servo::ServoMode,
     pub name: String,
-    pub positions: Vec<f32>,
-    pub keybindings: Vec<String>,
+    pub positions: Vec<Keybinding<f32>>,
 }
 
 impl RevServo {
@@ -27,18 +30,46 @@ impl RevServo {
 
         let mut removed_positions = vec![];
 
-        for i in 0..self.positions.len() {
-            ui.horizontal(|ui| {
-                ui.add(
-                    egui::Slider::new(self.positions.iter_mut().nth(i).unwrap(), -1.0..=1.0)
-                        .text("Position")
-                        .step_by(0.01)
-                        .max_decimals(2),
-                );
+        for (i, pos) in self.positions.iter_mut().enumerate() {
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.add(egui::Separator::default());
 
-                if ui.button("Delete").clicked() {
-                    removed_positions.push(i);
-                }
+                    ui.add(
+                        egui::Slider::new(&mut pos.value, -1.0..=1.0)
+                            .text("Position")
+                            .step_by(0.01)
+                            .max_decimals(2),
+                    );
+
+                    if ui.button("Delete").clicked() {
+                        removed_positions.push(i);
+                    }
+                });
+
+                let binding_text = match pos.button {
+                    Some(b) => format!("{:?}", b),
+                    None => "None".to_owned(),
+                };
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Separator::default());
+                    ui.add_space(10.0);
+
+                    egui::ComboBox::new(format!("{}{}", &self.name, &i), "Keybinding")
+                        .selected_text(format!("{:?}", binding_text))
+                        .width(105.0)
+                        .show_ui(ui, |ui| {
+                            for button in BooleanButton::iter() {
+                                ui.selectable_value(
+                                    &mut pos.button,
+                                    Some(button),
+                                    format!("{:?}", button),
+                                );
+                            }
+                        });
+                });
+                ui.add_space(10.0);
             });
         }
 
@@ -48,7 +79,7 @@ impl RevServo {
 
         ui.horizontal(|ui| {
             if ui.button("Add position").clicked() {
-                self.positions.push(0.0);
+                self.positions.push(Keybinding::new(0.0));
             }
         });
     }
@@ -84,7 +115,7 @@ impl generator::Generator for RevServo {
                 "\tprivate float {}_pos_{} = {};\n",
                 self.name,
                 i,
-                self.positions.iter().nth(i).unwrap()
+                self.positions.iter().nth(i).unwrap().value
             );
         }
         code += &"\n";
@@ -101,12 +132,26 @@ impl generator::Generator for RevServo {
         )
     }
 
-    /*fn generate_loop(&self) -> String {
-        format!(
-            "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(  drive - strafe + turn, -{}, {}));\n\n",
-            &self.name, &self.name, self.max_speed, self.max_speed
-        )
-    }*/
+    fn generate_loop(&self) -> String {
+        let mut code: String = "".into();
+        // generate keybindings
+        for i in 0..self.positions.len() {
+            if self.positions.iter().nth(i).unwrap().button != None {
+                code += &format!(
+                    "\t\t\tif (driveController.buttonJustPressed({:?}) {{\n",
+                    &self.positions.iter().nth(i).unwrap().button.unwrap()
+                );
+
+                code += &format!(
+                    "\t\t\t\t{}.runToPosition({}_pos_{});\n",
+                    self.name, self.name, i
+                );
+
+                code += "\t\t\t}\n\n";
+            }
+        }
+        code
+    }
 
     fn render_options(&mut self, ui: &mut egui::Ui, id: usize) {
         ui.label("Rev servo");
@@ -155,7 +200,6 @@ impl ServoGenerator for RevServo {
             mode: generators::servos::servo::ServoMode::Servo,
             name: name,
             positions: vec![],
-            keybindings: vec![],
         }
     }
 }
