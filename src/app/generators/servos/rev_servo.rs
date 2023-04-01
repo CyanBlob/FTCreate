@@ -48,7 +48,7 @@ impl RevServo {
                 });
 
                 let binding_text = match pos.button {
-                    Some(b) => format!("{:?}", b),
+                    Some(bind) => format!("{:?}", bind),
                     None => "None".to_owned(),
                 };
 
@@ -97,22 +97,21 @@ impl generator::Generator for RevServo {
 
     fn generate_includes(&self) -> String {
         "\
-        import com.qualcomm.robotcore.hardware.RevServo;\n\
+        import com.qualcomm.robotcore.hardware.CRServo;\n\
         import org.firstinspires.ftc.robotcore.external.Telemetry;\n\
-        import com.qualcomm.robotcore.hardware.HardwareMap;\n\
-        import com.qualcomm.robotcore.hardware.RevServoEx;\n\n"
+        import com.qualcomm.robotcore.hardware.HardwareMap;\n\n"
             .to_string()
     }
 
     fn generate_globals(&self) -> String {
         let mut code = format!(
-            "\t// {} globals\n\tprivate RevServoEx {} = null;\n\n",
+            "\t// {} globals\n\tprivate CRServo {} = null;\n\n",
             &self.name, &self.name
         );
 
         for i in 0..self.positions.len() {
             code += &format!(
-                "\tprivate float {}_pos_{} = {};\n",
+                "\tprivate double {}_pos_{} = {};\n",
                 self.name,
                 i,
                 self.positions.iter().nth(i).unwrap().value
@@ -127,7 +126,7 @@ impl generator::Generator for RevServo {
             "\t\t// {} init\n\t\t{} = hardwareMap.get(CRServo.class, \"{}\");\n\n",
             &self.name, &self.name, &self.name
         ) + &format!(
-            "\t\t{}.setDirection(RevServo.Direction.{:?});\n\n",
+            "\t\t{}.setDirection(CRServo.Direction.{:?});\n\n",
             &self.name, &self.direction
         )
     }
@@ -138,12 +137,12 @@ impl generator::Generator for RevServo {
         for i in 0..self.positions.len() {
             if self.positions.iter().nth(i).unwrap().button != None {
                 code += &format!(
-                    "\t\t\tif (driveController.buttonJustPressed({:?}) {{\n",
+                    "\t\t\tif (gamepad1.{:?}) {{\n",
                     &self.positions.iter().nth(i).unwrap().button.unwrap()
                 );
 
                 code += &format!(
-                    "\t\t\t\t{}.runToPosition({}_pos_{});\n",
+                    "\t\t\t\t{}.setPower({}_pos_{});\n",
                     self.name, self.name, i
                 );
 

@@ -1,16 +1,18 @@
 use crate::app::generators::generator::Generator;
 pub mod generators;
 
-//use generators::drivetrain;
-
-//use crate::app::drivetrain::drivetrain::Drivetrain;
-//use crate::app::subsystem::subsystem::Subsystem;
 use generators::motors::dc_motor::DcMotor;
 use generators::servos::rev_servo::RevServo;
 
 use self::generators::generator::SubsystemGenerator;
 use self::generators::subsystem::subsystem::Subsystem;
 use self::theme::Theme;
+
+use std::fs::File;
+use std::io::{Read, Seek, SeekFrom, Write};
+use std::path::PathBuf;
+
+use ftc_http::*;
 
 pub mod syntax_highlighting;
 
@@ -69,7 +71,11 @@ impl TemplateApp {
     pub fn generate_code(&mut self) {
         let mut new_code = String::new();
 
-        new_code += "package org.firstinspires.ftc.teamcode;\n";
+        new_code += "package org.firstinspires.ftc.teamcode;\n\n";
+        new_code += "import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;\n";
+        new_code += "import com.qualcomm.robotcore.eventloop.opmode.TeleOp;\n";
+        new_code += "import com.qualcomm.robotcore.util.ElapsedTime;\n";
+        new_code += "import com.qualcomm.robotcore.util.Range;\n";
 
         // includes
         let mut includes = self.drivetrain.generate_includes().to_string();
@@ -137,7 +143,7 @@ impl TemplateApp {
 
         new_code += "\t\t\ttelemetry.update();\n\
                 \t\t}\n\
-            \t}";
+            \t}\n}";
 
         self.code = new_code.to_string();
     }
@@ -169,6 +175,42 @@ impl eframe::App for TemplateApp {
         });
 
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
+            if ui.button("Upload code").clicked() {
+                let mut opt: ftc_http::Ftc = ftc_http::Ftc::default();
+                opt.upload = true;
+
+                let mut conf = ftc_http::AppConfig::default();
+
+                match ftc_http::RobotController::new(&mut conf) {
+                    Ok(r) => {
+                        let dir = tempfile::tempdir().unwrap();
+
+                        let file_path = dir.path().join("EasyFTC_teleop.java");
+                        let mut tmpfile = File::create(&file_path).unwrap();
+
+                        write!(tmpfile, "{}", &self.code).unwrap();
+
+                        println!("Uploading files...");
+                        match r.upload_files(vec![PathBuf::from(&file_path)]) {
+                            Ok(_) => match r.build() {
+                                Ok(_) => {
+                                    println!("Build succeeded");
+                                }
+                                Err(_) => {
+                                    println!("Build failed");
+                                }
+                            },
+                            Err(_) => {
+                                println!("Failed to upload files to robot");
+                            }
+                        }
+                    }
+                    Err(_) => {
+                        println!("Error communicating with robot");
+                    }
+                };
+            }
+
             ui.heading("Generated code");
             egui::scroll_area::ScrollArea::horizontal()
                 .max_width(width - MAX_PANEL_WIDTH)

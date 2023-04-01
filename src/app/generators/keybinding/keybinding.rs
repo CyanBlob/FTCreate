@@ -39,25 +39,29 @@ impl AxisKeybinding {
 #[allow(unused)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Copy, EnumIter)]
 pub enum BooleanButton {
-    A,
-    B,
-    X,
-    Y,
-    LeftStick,
-    RightStick,
-    LeftBumper,
-    RightBumper,
-    Start,
-    Back,
+    a,
+    b,
+    x,
+    y,
+    left_stick_button,
+    right_stick_button,
+    left_bumper,
+    right_bumper,
+    dpad_left,
+    dpad_right,
+    dpad_up,
+    dpad_down,
+    start,
+    select,
 }
 
 #[allow(unused)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Copy, EnumIter)]
 pub enum Axis {
-    LeftTrigger,
-    RightTrigger,
-    LeftStickX,
-    LeftStickY,
-    RightStickX,
-    RightStickY,
+    left_trigger,
+    right_trigger,
+    left_stick_x,
+    left_stick_y,
+    right_stick_x,
+    right_stick_y,
 }

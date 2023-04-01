@@ -39,13 +39,14 @@ impl<
     }
 
     fn generate_includes(&self) -> String {
+        let mut code: String = "".to_owned();
         if self.motors.len() > 0 as usize {
-            return self.motors.iter().nth(0).unwrap().generate_includes();
+            code += &self.motors.iter().nth(0).unwrap().generate_includes();
         }
         if self.servos.len() > 0 as usize {
-            return self.servos.iter().nth(0).unwrap().generate_includes();
+            code += &self.servos.iter().nth(0).unwrap().generate_includes();
         }
-        "".to_string()
+        code
     }
 
     fn generate_globals(&self) -> String {
@@ -87,18 +88,18 @@ impl<
         if self.is_drivetrain {
             match self.drivetrain_type {
                 DrivetrainType::Mecanum => {
-                    code += &format!("\t\t\t// Mecanum drivetrain one time setup\n\t\t\tdouble drive  = -gamepad1.left_stick_y*driveSpeed;  // forwards and backwards movement\n\
-            \t\t\tdouble turn   =  gamepad1.right_stick_x*turnSpeed;  // rotation\n");
+                    code += &format!("\t\t\t// Mecanum drivetrain one time setup\n\t\t\tdouble drive  = gamepad1.left_stick_y;  // forwards and backwards movement\n\
+            \t\t\tdouble turn   =  gamepad1.right_stick_x;  // rotation\n");
 
-                    code += &format!("\t\t\tdouble strafe = -gamepad1.left_stick_x*driveSpeed;  // side to side movement\n");
+                    code += &format!("\t\t\tdouble strafe = gamepad1.left_stick_x;  // side to side movement\n");
                 }
                 DrivetrainType::Arcade => {
-                    code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble drive  = -gamepad1.left_stick_y*driveSpeed;  // forwards and backwards movement\n\
-                    \t\t\tdouble turn   =  gamepad1.right_stick_x*turnSpeed;  // rotation\n");
+                    code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble drive  = gamepad1.left_stick_y;  // forwards and backwards movement\n\
+                    \t\t\tdouble turn   =  gamepad1.right_stick_x;  // rotation\n");
                 }
                 DrivetrainType::Tank => {
-                    code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble driveLeft  = -gamepad1.left_stick_y*driveSpeed;  // left motors movement\n\
-                    \t\t\tdouble driveRight   =  -gamepad1.right_stick_y*driveSpeed;  // right motors movement\n");
+                    code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble driveLeft  = gamepad1.left_stick_y;  // left motors movement\n\
+                    \t\t\tdouble driveRight   = gamepad1.right_stick_y;  // right motors movement\n");
                 }
             }
             code += "\n";

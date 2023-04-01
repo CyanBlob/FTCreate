@@ -14,7 +14,7 @@ pub enum MotorDirection {
 #[allow(non_camel_case_types)]
 pub enum MotorMode {
     RUN_TO_POSITION,
-    RUN_WITH_ENCODERS,
+    RUN_USING_ENCODERS,
     RUN_WITHOUT_ENCODERS,
 }
 

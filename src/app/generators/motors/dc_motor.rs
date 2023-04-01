@@ -48,7 +48,8 @@ impl generator::Generator for DcMotor {
         import com.qualcomm.robotcore.hardware.DcMotor;\n\
         import org.firstinspires.ftc.robotcore.external.Telemetry;\n\
         import com.qualcomm.robotcore.hardware.HardwareMap;\n\
-        import com.qualcomm.robotcore.hardware.DcMotorEx;\n\n"
+        import com.qualcomm.robotcore.hardware.DcMotorEx;\n\
+        import com.qualcomm.robotcore.hardware.DcMotorSimple;\n\n"
             .to_string()
     }
 
@@ -147,15 +148,22 @@ impl generator::Generator for DcMotor {
         for i in 0..self.positions.len() {
             if self.positions.iter().nth(i).unwrap().button != None {
                 code += &format!(
-                    "\t\t\tif (driveController.buttonJustPressed({:?}) {{\n",
+                    "\t\t\tif (gamepad1.{:?}) {{\n",
                     &self.positions.iter().nth(i).unwrap().button.unwrap()
                 );
 
                 code += &format!(
-                    "\t\t\t\t{}.runToPosition({}_pos_{});\n",
-                    self.name, self.name, i
-                );
+                    "\t\t\t\t{}.setTargetPosition({}_pos_{});\n",
+                    self.name, self.name, i);
 
+                code += &format!(
+                    "\t\t\t\t{}.setMode(DcMotor.RunMode.RUN_TO_POSITION);\n",
+                    self.name);
+
+                code += &format!(
+                    "\t\t\t\t{}.setVelocity(2000);\n",
+                    self.name);
+                    
                 code += &"\t\t\t}\n\n";
             }
         }
@@ -245,7 +253,7 @@ impl DcMotor {
                 });
 
                 let binding_text = match pos.button {
-                    Some(b) => format!("{:?}", b),
+                    Some(bind) => format!("{:?}", bind),
                     None => "None".to_owned(),
                 };
 
