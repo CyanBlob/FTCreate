@@ -9,10 +9,8 @@ use self::generators::subsystem::subsystem::Subsystem;
 use self::theme::Theme;
 
 use std::fs::File;
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::io::Write;
 use std::path::PathBuf;
-
-use ftc_http::*;
 
 pub mod syntax_highlighting;
 

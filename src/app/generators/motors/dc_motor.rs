@@ -1,6 +1,3 @@
-use egui::{widgets::ImageButton, Vec2};
-use egui_extras::RetainedImage;
-
 use serde::{Deserialize, Serialize};
 
 use strum::IntoEnumIterator;
@@ -154,16 +151,16 @@ impl generator::Generator for DcMotor {
 
                 code += &format!(
                     "\t\t\t\t{}.setTargetPosition({}_pos_{});\n",
-                    self.name, self.name, i);
+                    self.name, self.name, i
+                );
 
                 code += &format!(
                     "\t\t\t\t{}.setMode(DcMotor.RunMode.RUN_TO_POSITION);\n",
-                    self.name);
+                    self.name
+                );
 
-                code += &format!(
-                    "\t\t\t\t{}.setVelocity(2000);\n",
-                    self.name);
-                    
+                code += &format!("\t\t\t\t{}.setVelocity({});\n", self.name, &self.max_speed);
+
                 code += &"\t\t\t}\n\n";
             }
         }
@@ -171,8 +168,6 @@ impl generator::Generator for DcMotor {
     }
 
     fn render_options(&mut self, ui: &mut egui::Ui, id: usize) {
-        let max_speed = 1.0;
-
         ui.label("DC Motor");
         ui.add_space(10.0);
 
@@ -206,11 +201,22 @@ impl generator::Generator for DcMotor {
 
         ui.add_space(20.0);
 
-        ui.add(
-            egui::Slider::new(&mut self.max_speed, 0.0..=max_speed)
-                .text("Max speed")
-                .max_decimals(2),
-        );
+        match self.mode {
+            MotorMode::RUN_TO_POSITION => {
+                ui.add(
+                    egui::Slider::new(&mut self.max_speed, 0.0..=12000.0)
+                        .text("Max speed")
+                        .max_decimals(0),
+                );
+            }
+            _ => {
+                ui.add(
+                    egui::Slider::new(&mut self.max_speed, 0.0..=1.0)
+                        .text("Max power")
+                        .max_decimals(2),
+                );
+            }
+        }
 
         ui.add_space(20.0);
 

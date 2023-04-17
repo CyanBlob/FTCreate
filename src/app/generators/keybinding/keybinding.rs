@@ -1,10 +1,5 @@
-use egui_extras::RetainedImage;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
-
-use super::super::generator;
-
-pub(crate) const GAMEPAD_IMAGE: &[u8] = include_bytes!("../../../../resources/gamepad_white.png");
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 pub struct Keybinding<T> {
@@ -28,6 +23,7 @@ impl<T> Keybinding<T> {
 }
 
 impl AxisKeybinding {
+    #[allow(unused)]
     pub fn new(value: f32) -> Self {
         AxisKeybinding {
             value: value,
@@ -36,7 +32,7 @@ impl AxisKeybinding {
     }
 }
 
-#[allow(unused)]
+#[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Copy, EnumIter)]
 pub enum BooleanButton {
     a,
@@ -55,7 +51,7 @@ pub enum BooleanButton {
     select,
 }
 
-#[allow(unused)]
+#[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Copy, EnumIter)]
 pub enum Axis {
     left_trigger,
