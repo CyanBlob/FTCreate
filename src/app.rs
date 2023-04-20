@@ -213,17 +213,15 @@ impl eframe::App for TemplateApp {
             }
 
             ui.heading("Generated code");
-            egui::scroll_area::ScrollArea::horizontal()
-                .max_width(width - MAX_PANEL_WIDTH)
-                .show(ui, |ui| {
-                    egui::scroll_area::ScrollArea::vertical()
-                        .auto_shrink([false; 2])
-                        .show(ui, |ui| {
-                            ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                                show_code(ui, &self.code);
-                            });
+            egui::scroll_area::ScrollArea::horizontal().show(ui, |ui| {
+                egui::scroll_area::ScrollArea::vertical()
+                    .auto_shrink([false; 2])
+                    .show(ui, |ui| {
+                        ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
+                            show_code(ui, &self.code, ui.available_width());
                         });
-                });
+                    });
+            });
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -312,9 +310,9 @@ impl eframe::App for TemplateApp {
     }
 }
 
-fn show_code(ui: &mut egui::Ui, code: &str) {
+fn show_code(ui: &mut egui::Ui, code: &str, width: f32) {
     let code = remove_leading_indentation(code.trim_start_matches('\n'));
-    crate::app::syntax_highlighting::code_view_ui(ui, &code);
+    crate::app::syntax_highlighting::code_view_ui(ui, &code, width);
 }
 
 fn remove_leading_indentation(code: &str) -> String {

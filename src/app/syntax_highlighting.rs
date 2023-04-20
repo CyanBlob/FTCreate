@@ -2,13 +2,13 @@ use egui::text::LayoutJob;
 use serde::{Deserialize, Serialize};
 
 /// View some code with syntax highlighting and selection.
-pub fn code_view_ui(ui: &mut egui::Ui, mut code: &str) {
+pub fn code_view_ui(ui: &mut egui::Ui, mut code: &str, width: f32) {
     let language = "java";
     let theme = CodeTheme::from_memory(ui.ctx());
 
     let mut layouter = |ui: &egui::Ui, string: &str, _wrap_width: f32| {
-        let layout_job = highlight(ui.ctx(), &theme, string, language);
-        //layout_job.wrap.max_width = 800.0; // no wrapping
+        let mut layout_job = highlight(ui.ctx(), &theme, string, language);
+        layout_job.wrap.max_width = width; // no wrapping
         ui.fonts().layout_job(layout_job)
     };
 
