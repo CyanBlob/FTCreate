@@ -30,18 +30,18 @@ pub struct TemplateApp {
     code: String,
 
     #[serde(skip)]
-    visible: usize,
+    selected_subsystem: usize,
 }
 
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
             // Example stuff:
-            label: "Hello World!".to_owned(),
+            label: "EasyFTC".to_owned(),
             drivetrain: Subsystem::new("Drivetrain".to_owned(), true),
             subsystems: vec![],
-            code: "Click \"GENERATE!\"".to_string(),
-            visible: 0,
+            code: "".to_string(),
+            selected_subsystem: 0,
         }
     }
 }
@@ -69,13 +69,14 @@ impl TemplateApp {
     pub fn generate_code(&mut self) {
         let mut new_code = String::new();
 
+        // standard includes
         new_code += "package org.firstinspires.ftc.teamcode;\n\n";
         new_code += "import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;\n";
         new_code += "import com.qualcomm.robotcore.eventloop.opmode.TeleOp;\n";
         new_code += "import com.qualcomm.robotcore.util.ElapsedTime;\n";
         new_code += "import com.qualcomm.robotcore.util.Range;\n";
 
-        // includes
+        // subsystem includes
         let mut includes = self.drivetrain.generate_includes().to_string();
 
         self.subsystems.iter().for_each(|subsystem| {
@@ -99,7 +100,7 @@ impl TemplateApp {
         new_code += "public class EasyFTC_teleop extends LinearOpMode {\n\
                 \n\tprivate ElapsedTime runtime = new ElapsedTime();\n\n";
 
-        // globals
+        // global variables
         new_code += &self.drivetrain.generate_globals();
 
         self.subsystems.iter().for_each(|subsystem| {
@@ -181,8 +182,10 @@ impl eframe::App for TemplateApp {
 
                 match ftc_http::RobotController::new(&mut conf) {
                     Ok(r) => {
+                        // create a tmp directory to write files into
                         let dir = tempfile::tempdir().unwrap();
 
+                        // write teleop to a file
                         let file_path = dir.path().join("EasyFTC_teleop.java");
                         let mut tmpfile = File::create(&file_path).unwrap();
 
@@ -228,7 +231,7 @@ impl eframe::App for TemplateApp {
                 ui.horizontal(|ui| {
                     ui.label("Subsystems: ");
                     if ui.button("Drivetrain").clicked() {
-                        self.visible = 0;
+                        self.selected_subsystem = 0;
                     }
 
                     self.subsystems
@@ -236,7 +239,7 @@ impl eframe::App for TemplateApp {
                         .enumerate()
                         .for_each(|(i, subsystem)| {
                             if ui.button(subsystem.get_name()).clicked() {
-                                self.visible = i + 1;
+                                self.selected_subsystem = i + 1;
                             }
                         });
 
@@ -245,21 +248,21 @@ impl eframe::App for TemplateApp {
                             format!("Subsystem_{}", self.subsystems.len() as i32 + 1),
                             false,
                         ));
-                        self.visible = self.subsystems.len();
+                        self.selected_subsystem = self.subsystems.len();
                     }
                 });
             });
 
             ui.add_space(30.0);
 
-            if self.visible == 0 {
+            if self.selected_subsystem == 0 {
                 ui.heading("Drivetrain Configuration");
             } else {
                 ui.heading(format!(
                     "{} Configuration",
                     self.subsystems
                         .iter()
-                        .nth(self.visible - 1)
+                        .nth(self.selected_subsystem - 1)
                         .unwrap()
                         .get_name()
                 ));
@@ -269,7 +272,7 @@ impl eframe::App for TemplateApp {
                         &mut self
                             .subsystems
                             .iter_mut()
-                            .nth(self.visible - 1)
+                            .nth(self.selected_subsystem - 1)
                             .unwrap()
                             .name,
                     )
@@ -281,26 +284,20 @@ impl eframe::App for TemplateApp {
                 ui.add_space(10.0);
 
                 if ui.button("Delete subsystem").clicked() {
-                    self.subsystems.remove(self.visible - 1);
-                    self.visible -= 1;
+                    self.subsystems.remove(self.selected_subsystem - 1);
+                    self.selected_subsystem -= 1;
                 }
             }
-            if self.visible == 0 {
+            if self.selected_subsystem == 0 {
                 self.drivetrain.render_options(ui, 0);
             } else {
                 self.subsystems
                     .iter_mut()
-                    .nth(self.visible - 1)
+                    .nth(self.selected_subsystem - 1)
                     .unwrap()
                     .render_options(ui, 0);
             }
 
-            /*ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-                if ui.button("GENERATE!").clicked() {
-                    self.generate_code();
-                }
-                egui::warn_if_debug_build(ui);
-            });*/
             self.generate_code();
         });
 

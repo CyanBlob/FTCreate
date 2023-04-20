@@ -9,7 +9,6 @@ use crate::app::generators::{
     self,
     generator::GeneratorSerialize,
     keybinding::keybinding::{BooleanButton, Keybinding},
-    method::Method,
     servos,
 };
 
@@ -21,6 +20,99 @@ pub struct RevServo {
     pub mode: servos::servo::ServoMode,
     pub name: String,
     pub positions: Vec<Keybinding<f32>>,
+}
+
+impl generator::Generator for RevServo {
+    fn generate_includes(&self) -> String {
+        "\
+        import com.qualcomm.robotcore.hardware.CRServo;\n\
+        import org.firstinspires.ftc.robotcore.external.Telemetry;\n\
+        import com.qualcomm.robotcore.hardware.HardwareMap;\n\n"
+            .to_string()
+    }
+
+    fn generate_globals(&self) -> String {
+        let mut code = format!(
+            "\t// {} globals\n\tprivate CRServo {} = null;\n\n",
+            &self.name, &self.name
+        );
+
+        for i in 0..self.positions.len() {
+            code += &format!(
+                "\tprivate double {}_pos_{} = {};\n",
+                self.name,
+                i,
+                self.positions.iter().nth(i).unwrap().value
+            );
+        }
+        code += &"\n";
+        code
+    }
+
+    fn generate_init(&self) -> String {
+        format!(
+            "\t\t// {} init\n\t\t{} = hardwareMap.get(CRServo.class, \"{}\");\n\n",
+            &self.name, &self.name, &self.name
+        ) + &format!(
+            "\t\t{}.setDirection(CRServo.Direction.{:?});\n\n",
+            &self.name, &self.direction
+        )
+    }
+
+    fn generate_loop(&self) -> String {
+        let mut code: String = "".into();
+        // generate keybindings
+        for i in 0..self.positions.len() {
+            if self.positions.iter().nth(i).unwrap().button != None {
+                code += &format!(
+                    "\t\t\tif (gamepad1.{:?}) {{\n",
+                    &self.positions.iter().nth(i).unwrap().button.unwrap()
+                );
+
+                code += &format!("\t\t\t\t{}.setPower({}_pos_{});\n", self.name, self.name, i);
+
+                code += "\t\t\t}\n\n";
+            }
+        }
+        code
+    }
+
+    fn render_options(&mut self, ui: &mut egui::Ui, id: usize) {
+        ui.label("Rev servo");
+        ui.add_space(10.0);
+
+        ui.text_edit_singleline(&mut self.name);
+
+        ui.push_id(id, |ui| {
+            egui::ComboBox::from_label("Servo mode")
+                .selected_text(format!("{:?}", &mut self.mode))
+                .width(170.0)
+                .show_ui(ui, |ui| {
+                    for mode in servo::ServoMode::iter() {
+                        ui.selectable_value(&mut self.mode, mode, format!("{:?}", mode));
+                    }
+                });
+        });
+
+        ui.push_id(id, |ui| {
+            egui::ComboBox::from_label("Direction")
+                .selected_text(format!("{:?}", &mut self.direction))
+                .width(170.0)
+                .show_ui(ui, |ui| {
+                    for direction in servo::ServoDirection::iter() {
+                        ui.selectable_value(
+                            &mut self.direction,
+                            direction,
+                            format!("{:?}", direction),
+                        );
+                    }
+                });
+        });
+
+        self.render_positions(ui, id);
+
+        ui.add_space(20.0);
+    }
 }
 
 impl RevServo {
@@ -86,109 +178,6 @@ impl RevServo {
 }
 
 impl GeneratorSerialize for RevServo {}
-
-impl generator::Generator for RevServo {
-    fn get_methods(&self) -> Vec<Method> {
-        vec![Method {
-            name: "setPower".to_string(),
-            num_args: 1,
-        }]
-    }
-
-    fn generate_includes(&self) -> String {
-        "\
-        import com.qualcomm.robotcore.hardware.CRServo;\n\
-        import org.firstinspires.ftc.robotcore.external.Telemetry;\n\
-        import com.qualcomm.robotcore.hardware.HardwareMap;\n\n"
-            .to_string()
-    }
-
-    fn generate_globals(&self) -> String {
-        let mut code = format!(
-            "\t// {} globals\n\tprivate CRServo {} = null;\n\n",
-            &self.name, &self.name
-        );
-
-        for i in 0..self.positions.len() {
-            code += &format!(
-                "\tprivate double {}_pos_{} = {};\n",
-                self.name,
-                i,
-                self.positions.iter().nth(i).unwrap().value
-            );
-        }
-        code += &"\n";
-        code
-    }
-
-    fn generate_init(&self) -> String {
-        format!(
-            "\t\t// {} init\n\t\t{} = hardwareMap.get(CRServo.class, \"{}\");\n\n",
-            &self.name, &self.name, &self.name
-        ) + &format!(
-            "\t\t{}.setDirection(CRServo.Direction.{:?});\n\n",
-            &self.name, &self.direction
-        )
-    }
-
-    fn generate_loop(&self) -> String {
-        let mut code: String = "".into();
-        // generate keybindings
-        for i in 0..self.positions.len() {
-            if self.positions.iter().nth(i).unwrap().button != None {
-                code += &format!(
-                    "\t\t\tif (gamepad1.{:?}) {{\n",
-                    &self.positions.iter().nth(i).unwrap().button.unwrap()
-                );
-
-                code += &format!(
-                    "\t\t\t\t{}.setPower({}_pos_{});\n",
-                    self.name, self.name, i
-                );
-
-                code += "\t\t\t}\n\n";
-            }
-        }
-        code
-    }
-
-    fn render_options(&mut self, ui: &mut egui::Ui, id: usize) {
-        ui.label("Rev servo");
-        ui.add_space(10.0);
-
-        ui.text_edit_singleline(&mut self.name);
-
-        ui.push_id(id, |ui| {
-            egui::ComboBox::from_label("Servo mode")
-                .selected_text(format!("{:?}", &mut self.mode))
-                .width(170.0)
-                .show_ui(ui, |ui| {
-                    for mode in servo::ServoMode::iter() {
-                        ui.selectable_value(&mut self.mode, mode, format!("{:?}", mode));
-                    }
-                });
-        });
-
-        ui.push_id(id, |ui| {
-            egui::ComboBox::from_label("Direction")
-                .selected_text(format!("{:?}", &mut self.direction))
-                .width(170.0)
-                .show_ui(ui, |ui| {
-                    for direction in servo::ServoDirection::iter() {
-                        ui.selectable_value(
-                            &mut self.direction,
-                            direction,
-                            format!("{:?}", direction),
-                        );
-                    }
-                });
-        });
-
-        self.render_positions(ui, id);
-
-        ui.add_space(20.0);
-    }
-}
 
 impl Servo for RevServo {}
 

@@ -1,6 +1,5 @@
 use crate::app::generators::{
     generator::{self, SubsystemGenerator},
-    method::Method,
     motors::motor::MotorGenerator,
     servos::servo::ServoGenerator,
 };
@@ -10,7 +9,6 @@ use strum_macros::EnumIter;
 #[derive(
     Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, EnumIter, PartialOrd, Copy,
 )]
-
 pub enum DrivetrainType {
     Mecanum,
     Arcade,
@@ -34,10 +32,6 @@ impl<
         U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
     > generator::Generator for Subsystem<T, U>
 {
-    fn get_methods(&self) -> Vec<Method> {
-        vec![]
-    }
-
     fn generate_includes(&self) -> String {
         let mut code: String = "".to_owned();
         if self.motors.len() > 0 as usize {
@@ -91,7 +85,9 @@ impl<
                     code += &format!("\t\t\t// Mecanum drivetrain one time setup\n\t\t\tdouble drive  = gamepad1.left_stick_y;  // forwards and backwards movement\n\
             \t\t\tdouble turn   =  gamepad1.right_stick_x;  // rotation\n");
 
-                    code += &format!("\t\t\tdouble strafe = gamepad1.left_stick_x;  // side to side movement\n");
+                    code += &format!(
+                        "\t\t\tdouble strafe = gamepad1.left_stick_x;  // side to side movement\n"
+                    );
                 }
                 DrivetrainType::Arcade => {
                     code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble drive  = gamepad1.left_stick_y;  // forwards and backwards movement\n\
@@ -162,7 +158,7 @@ impl<
                     });
                 }
 
-                let mut added_motors = 0;
+                let mut num_motors = 0;
                 let num_columns = 2;
 
                 ui.add_space(30.0);
@@ -187,14 +183,14 @@ impl<
 
                 egui::Grid::new("Drivetrain motors grid").show(ui, |ui| {
                     self.motors.iter_mut().enumerate().for_each(|(id, motor)| {
-                        added_motors += 1;
+                        num_motors += 1;
                         ui.vertical(|ui| {
                             ui.add_space(20.0);
                             ui.separator();
                             motor.render_options(ui, id);
                         });
 
-                        if added_motors % num_columns == 0 {
+                        if num_motors % num_columns == 0 {
                             ui.end_row();
                         }
                     });
@@ -220,17 +216,17 @@ impl<
 
                 ui.add_space(10.0);
 
-                added_motors = 0;
+                num_motors = 0;
                 egui::Grid::new("Servos grid").show(ui, |ui| {
                     self.servos.iter_mut().enumerate().for_each(|(id, servo)| {
-                        added_motors += 1;
+                        num_motors += 1;
                         ui.vertical(|ui| {
                             ui.add_space(20.0);
                             ui.separator();
                             servo.render_options(ui, id + 1000);
                         });
 
-                        if added_motors % num_columns == 0 {
+                        if num_motors % num_columns == 0 {
                             ui.end_row();
                         }
                     });

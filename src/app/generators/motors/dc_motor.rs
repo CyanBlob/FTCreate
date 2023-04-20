@@ -9,7 +9,6 @@ use crate::app::generators::{
     self,
     generator::GeneratorSerialize,
     keybinding::keybinding::{BooleanButton, Keybinding},
-    method::Method,
     motors,
     subsystem::subsystem::DrivetrainType,
 };
@@ -28,18 +27,9 @@ pub struct DcMotor {
     pub drivetrain_type: Option<DrivetrainType>,
 }
 
-impl DcMotor {}
-
 impl GeneratorSerialize for DcMotor {}
 
 impl generator::Generator for DcMotor {
-    fn get_methods(&self) -> Vec<Method> {
-        vec![Method {
-            name: "setPower".to_string(),
-            num_args: 1,
-        }]
-    }
-
     fn generate_includes(&self) -> String {
         "\
         import com.qualcomm.robotcore.hardware.DcMotor;\n\
