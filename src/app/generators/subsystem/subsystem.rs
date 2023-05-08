@@ -95,7 +95,7 @@ impl<
                 }
                 DrivetrainType::Tank => {
                     code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble driveLeft  = gamepad1.left_stick_y;  // left motors movement\n\
-                    \t\t\tdouble driveRight = gamepad1.right_stick_y;  // right motors movement\n");
+                    \t\t\tdouble driveRight = gamepad1.right_stick_y; // right motors movement\n");
                 }
             }
             code += "\n";
