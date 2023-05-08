@@ -83,7 +83,7 @@ impl<
             match self.drivetrain_type {
                 DrivetrainType::Mecanum => {
                     code += &format!("\t\t\t// Mecanum drivetrain one time setup\n\t\t\tdouble drive  = gamepad1.left_stick_y;  // forwards and backwards movement\n\
-            \t\t\tdouble turn   = gamepad1.right_stick_x;  // rotation\n");
+            \t\t\tdouble turn   = gamepad1.right_stick_x; // rotation\n");
 
                     code += &format!(
                         "\t\t\tdouble strafe = gamepad1.left_stick_x;  // side to side movement\n"
@@ -91,11 +91,11 @@ impl<
                 }
                 DrivetrainType::Arcade => {
                     code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble drive  = gamepad1.left_stick_y;  // forwards and backwards movement\n\
-                    \t\t\tdouble turn   =  gamepad1.right_stick_x;  // rotation\n");
+                    \t\t\tdouble turn   = gamepad1.right_stick_x; // rotation\n");
                 }
                 DrivetrainType::Tank => {
                     code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble driveLeft  = gamepad1.left_stick_y;  // left motors movement\n\
-                    \t\t\tdouble driveRight   = gamepad1.right_stick_y;  // right motors movement\n");
+                    \t\t\tdouble driveRight = gamepad1.right_stick_y;  // right motors movement\n");
                 }
             }
             code += "\n";

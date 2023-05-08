@@ -47,7 +47,7 @@ impl Default for TemplateApp {
 }
 
 impl TemplateApp {
-    /// Called once before the first frame.
+    // Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
@@ -107,7 +107,7 @@ impl TemplateApp {
             new_code += &subsystem.generate_globals();
         });
 
-        new_code += "\n\t@Override\n\
+        new_code += "\t@Override\n\
         \tpublic void runOpMode() {\n\n\
             \t\ttelemetry.addData(\"Status\", \"Initialized\");\n\
             \t\ttelemetry.update();";
@@ -120,7 +120,7 @@ impl TemplateApp {
             new_code += &subsystem.generate_init();
         });
 
-        new_code += "\n\t\twaitForStart();\n\n\
+        new_code += "\t\twaitForStart();\n\n\
             \t\t// Reset the timer (stopwatch) because we only care about time since the game\n\
             \t\t// actually starts\n\
             \t\truntime.reset();\n\n\

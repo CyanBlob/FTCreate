@@ -3,8 +3,6 @@ use eframe::egui::{Style, Visuals};
 
 pub struct Theme {
     pub visuals: Visuals,
-    pub slider: Style,
-    pub checkbox: Style,
 }
 
 impl Theme {
@@ -37,35 +35,8 @@ impl Theme {
         // background
         visuals.panel_fill = cfg.bg;
 
-        let mut slider = Style {
-            visuals: visuals.clone(),
-            ..Default::default()
-        };
-        slider.visuals.widgets.inactive.bg_fill = cfg.bg;
-        slider.visuals.widgets.inactive.fg_stroke.width = 0.0;
-        slider.visuals.widgets.inactive.expansion = 3.0;
-
-        slider.visuals.widgets.hovered = slider.visuals.widgets.inactive;
-        slider.visuals.widgets.active = slider.visuals.widgets.inactive;
-
-        let mut checkbox = Style {
-            visuals: visuals.clone(),
-            ..Default::default()
-        };
-        checkbox.visuals.widgets.noninteractive.fg_stroke.color = cfg.foreground;
-        checkbox.visuals.widgets.noninteractive.bg_stroke.width = 0.5;
-        checkbox.visuals.widgets.noninteractive.bg_stroke.color = cfg.foreground;
-        checkbox.visuals.widgets.noninteractive.expansion = 1.0;
-        checkbox.spacing.icon_spacing = 10.0;
-
-        checkbox.visuals.widgets.inactive = checkbox.visuals.widgets.noninteractive;
-        checkbox.visuals.widgets.active = checkbox.visuals.widgets.noninteractive;
-        checkbox.visuals.widgets.hovered = checkbox.visuals.widgets.noninteractive;
-
         Self {
             visuals,
-            slider,
-            checkbox,
         }
     }
 }
