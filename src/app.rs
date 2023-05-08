@@ -16,8 +16,6 @@ pub mod syntax_highlighting;
 
 pub mod theme;
 
-const MAX_PANEL_WIDTH: f32 = 650.0;
-
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -215,7 +213,7 @@ impl eframe::App for TemplateApp {
             ui.heading("Generated code");
             egui::scroll_area::ScrollArea::horizontal().show(ui, |ui| {
                 egui::scroll_area::ScrollArea::vertical()
-                    .auto_shrink([false; 2])
+                    .auto_shrink([true; 2])
                     .show(ui, |ui| {
                         ui.with_layout(egui::Layout::top_down(egui::Align::LEFT), |ui| {
                             show_code(ui, &self.code, ui.available_width());
