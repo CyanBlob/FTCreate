@@ -19,6 +19,7 @@ pub struct AppStyle {
 
     pub accent_blue: Color32,
     pub accent_yellow: Color32,
+    pub accent_green: Color32,
 
     pub text_color: Color32,
     pub input_text_color: Color32,
@@ -44,6 +45,7 @@ impl Default for AppStyle {
 
             accent_blue: Color32::from_rgb(1, 71, 250),
             accent_yellow: Color32::from_rgb(255, 236, 0),
+            accent_green: Color32::from_rgb(0, 236, 0),
 
             text_color: Color32::from_rgb(255, 255, 255),
             input_text_color: Color32::from_rgb(200, 200, 200),
