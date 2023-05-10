@@ -29,6 +29,19 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     - name: Upload a Build Artifact
+      if: ${{ matrix.os == 'windows-latest' }}
+      uses: actions/upload-artifact@v3.1.2
+      with:
+          name: ${{ env.PROJECT_NAME }}_${{ matrix.os }}.exe
+          path: target/release/${{ env.PROJECT_NAME }}.exe
+    - name: Upload a Build Artifact
+      if: ${{ matrix.os == 'macos-latest' }}
+      uses: actions/upload-artifact@v3.1.2
+      with:
+          name: ${{ env.PROJECT_NAME }}_${{ matrix.os }}.app
+          path: target/release/${{ env.PROJECT_NAME }}
+    - name: Upload a Build Artifact
+      if: ${{ matrix.os == 'ubuntu-latest' }}
       uses: actions/upload-artifact@v3.1.2
       with:
           name: ${{ env.PROJECT_NAME }}_${{ matrix.os }}
