@@ -17,15 +17,17 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
 
     steps:
+    - uses: actions/checkout@v3
     - name: Rust Cache
-      # You may pin to the exact commit or the version.
-      # uses: Swatinem/rust-cache@6fd3edff6979b79f87531400ad694fb7f2c84b1f
       uses: Swatinem/rust-cache@v2.2.1
       with:
         cache-on-failure: false
-
-    - uses: actions/checkout@v3
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --verbose --release
     - name: Run tests
       run: cargo test --verbose
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v3.1.2
+      with:
+          name: ${{ env.EasyFTC }}
+          path: target/release/${{ env.EasyFTC }}
