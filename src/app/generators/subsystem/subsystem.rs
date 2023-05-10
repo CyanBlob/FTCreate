@@ -24,6 +24,7 @@ pub struct Subsystem<
     pub servos: Vec<U>,
     pub is_drivetrain: bool,
     pub drivetrain_type: DrivetrainType,
+    pub invert_steering: bool,
     pub name: String,
 }
 
@@ -98,6 +99,15 @@ impl<
                     \t\t\tdouble driveRight = gamepad1.right_stick_y; // right motors movement\n");
                 }
             }
+
+            match self.drivetrain_type {
+                DrivetrainType::Tank => {}
+                _ => match self.invert_steering {
+                    true => code += "\n\t\t\tturn = turn * -1.0;\n",
+                    false => {}
+                },
+            }
+
             code += "\n";
         }
 
@@ -153,9 +163,22 @@ impl<
                             }
                         });
 
-                    self.motors.iter_mut().for_each(|motor| {
-                        motor.set_drivetrain_type(Some(self.drivetrain_type));
-                    });
+                    match self.drivetrain_type {
+                        DrivetrainType::Tank => {}
+                        _ => {
+                            egui::ComboBox::from_label("Invert steering")
+                                .selected_text(format!("{}", self.invert_steering))
+                                .width(170.0)
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(&mut self.invert_steering, false, "false");
+                                    ui.selectable_value(&mut self.invert_steering, true, "true");
+                                });
+
+                            self.motors.iter_mut().for_each(|motor| {
+                                motor.set_drivetrain_type(Some(self.drivetrain_type));
+                            });
+                        }
+                    }
                 }
 
                 let mut num_motors = 0;
@@ -259,6 +282,7 @@ impl<
             drivetrain_type: DrivetrainType::Mecanum,
             servos: vec![],
             is_drivetrain,
+            invert_steering: false,
             name: name.to_string(),
         }
     }

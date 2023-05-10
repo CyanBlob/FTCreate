@@ -72,6 +72,9 @@ impl generator::Generator for DcMotor {
             "\t\t{}.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);\n",
             &self.name
         ) + &format!(
+            "\n\t\t{}.setTargetPosition(0);\n",
+            &self.name
+        ) + &format!(
             "\t\t{}.setMode(DcMotor.RunMode.{:?});\n\n",
             &self.name, &self.mode
         )
