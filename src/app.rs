@@ -3,7 +3,6 @@ pub mod generators;
 
 use generators::motors::dc_motor::DcMotor;
 use generators::servos::rev_servo::RevServo;
-use tokio::sync::futures;
 
 use self::generators::generator::SubsystemGenerator;
 use self::generators::subsystem::subsystem::Subsystem;
@@ -12,8 +11,7 @@ use self::theme::Theme;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::Arc;
-use tokio::sync::{mpsc, mpsc::unbounded_channel, Semaphore, TryAcquireError};
+use tokio::sync::{mpsc, mpsc::unbounded_channel, TryAcquireError};
 
 use tokio;
 use tokio::runtime::Runtime;
@@ -74,7 +72,6 @@ impl Default for TemplateApp {
             subsystems: vec![],
             code: "".to_string(),
             selected_subsystem: 0,
-            //upload_status: Arc::new(Mutex::new(UploadStatus::DISCONNECTED)),
             upload_status_tx: tx,
             upload_status_rx: rx,
             upload_status: "Disconnected".into(),
@@ -235,8 +232,8 @@ impl eframe::App for TemplateApp {
                             UploadStatus::UPLOADING => "Uploading code to robot".into(),
                             UploadStatus::UPLOADED => "Uploaded code to robot".into(),
                             UploadStatus::UPLOAD_FAILED => "Failed to upload code".into(),
-                            UploadStatus::BUILDING => "Building code".into(),
-                            UploadStatus::BUILT => "Code built. Ready to run".into(),
+                            UploadStatus::BUILDING => "Building code...".into(),
+                            UploadStatus::BUILT => "Code built successfully. Ready to run".into(),
                             UploadStatus::BUILD_FAILED => "Build failed".into(),
                         };
                     }
@@ -247,22 +244,12 @@ impl eframe::App for TemplateApp {
             ui.label(&self.upload_status);
 
             if ui.button("Upload code").clicked() {
-                //let status_arc = self.upload_status.clone();
                 let code = self.code.clone();
                 let tx = self.upload_status_tx.clone();
 
                 self.tokio_runtime.spawn(async move {
-                    upload_code(/*status_arc,*/ code, &tx).await;
-                });
-
-                /*futures::executor::block_on(async move {
-                    self.tokio_runtime.spawn(async move {
-                        upload_code(code).await;
-                    }).await.unwrap()
-                })*/
-                /*tokio::task::spawn(async move {
                     upload_code(code, &tx).await;
-                });*/
+                });
             }
         });
 
@@ -381,6 +368,7 @@ async fn upload_code(code: String, upload_status_tx: &mpsc::UnboundedSender<Uplo
     match ftc_http::RobotController::new(&mut conf).await {
         Ok(r) => {
             upload_status_tx.send(UploadStatus::CONNECTED);
+
             // create a tmp directory to write files into
             let dir = tempfile::tempdir().unwrap();
 
@@ -393,16 +381,19 @@ async fn upload_code(code: String, upload_status_tx: &mpsc::UnboundedSender<Uplo
             upload_status_tx.send(UploadStatus::UPLOADING);
             println!("Uploading files...");
             match r.upload_files(vec![PathBuf::from(&file_path)]).await {
-                Ok(_) => match r.build().await {
-                    Ok(_) => {
-                        upload_status_tx.send(UploadStatus::BUILT);
-                        println!("Build succeeded");
+                Ok(_) => {
+                    upload_status_tx.send(UploadStatus::BUILDING);
+                    match r.build().await {
+                        Ok(_) => {
+                            upload_status_tx.send(UploadStatus::BUILT);
+                            println!("Build succeeded");
+                        }
+                        Err(_) => {
+                            upload_status_tx.send(UploadStatus::BUILD_FAILED);
+                            println!("Build failed");
+                        }
                     }
-                    Err(_) => {
-                        upload_status_tx.send(UploadStatus::BUILD_FAILED);
-                        println!("Build failed");
-                    }
-                },
+                }
                 Err(_) => {
                     upload_status_tx.send(UploadStatus::UPLOAD_FAILED);
                     println!("Failed to upload files to robot");
@@ -413,41 +404,4 @@ async fn upload_code(code: String, upload_status_tx: &mpsc::UnboundedSender<Uplo
             upload_status_tx.send(UploadStatus::CONNECT_FAILED);
         }
     };
-
-    /*match ftc_http::RobotController::new(&mut conf).await {
-            Ok(r) => {
-    upload_status_tx.send(UploadStatus::CONNECTED);
-                // create a tmp directory to write files into
-                let dir = tempfile::tempdir().unwrap();
-
-                // write teleop to a file
-                let file_path = dir.path().join("EasyFTC_teleop.java");
-                let mut tmpfile = File::create(&file_path).unwrap();
-
-                write!(tmpfile, "{}", code).unwrap();
-
-    upload_status_tx.send(UploadStatus::UPLOADING);
-                println!("Uploading files...");
-                match r.upload_files(vec![PathBuf::from(&file_path)]).await {
-                    Ok(_) => match r.build().await {
-                        Ok(_) => {
-    upload_status_tx.send(UploadStatus::BUILT);
-                            println!("Build succeeded");
-                        }
-                        Err(_) => {
-    upload_status_tx.send(UploadStatus::BUILD_FAILED);
-                            println!("Build failed");
-                        }
-                    },
-                    Err(_) => {
-    upload_status_tx.send(UploadStatus::UPLOAD_FAILED);
-                        println!("Failed to upload files to robot");
-                    }
-                }
-            }
-            Err(_) => {
-    upload_status_tx.send(UploadStatus::CONNECT_FAILED);
-                println!("Error communicating with robot");
-            }
-        };*/
 }

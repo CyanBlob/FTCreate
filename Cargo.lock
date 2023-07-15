@@ -1145,6 +1145,7 @@ dependencies = [
 [[package]]
 name = "ftc_http"
 version = "2.2.0"
+source = "git+https://github.com/CyanBlob/ftc_http?branch=async#7bae9f0f864799fa0160bfec8adf514b8d9f96e5"
 dependencies = [
  "confy",
  "lazy_static",
