@@ -3,6 +3,7 @@ pub mod generators;
 
 use generators::motors::dc_motor::DcMotor;
 use generators::servos::rev_servo::RevServo;
+use tokio::sync::futures;
 
 use self::generators::generator::SubsystemGenerator;
 use self::generators::subsystem::subsystem::Subsystem;
@@ -11,6 +12,11 @@ use self::theme::Theme;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::sync::{mpsc, mpsc::unbounded_channel, Semaphore, TryAcquireError};
+
+use tokio;
+use tokio::runtime::Runtime;
 
 pub mod syntax_highlighting;
 
@@ -29,10 +35,38 @@ pub struct TemplateApp {
 
     #[serde(skip)]
     selected_subsystem: usize,
+
+    #[serde(skip)]
+    upload_status_tx: mpsc::UnboundedSender<UploadStatus>,
+    #[serde(skip)]
+    upload_status_rx: mpsc::UnboundedReceiver<UploadStatus>,
+    upload_status: String,
+
+    #[serde(skip)]
+    tokio_runtime: Runtime,
 }
+
+#[derive(serde::Deserialize, serde::Serialize)]
+enum UploadStatus {
+    DISCONNECTED,
+    CONNECTING,
+    CONNECTED,
+    CONNECT_FAILED,
+    UPLOADING,
+    UPLOADED,
+    UPLOAD_FAILED,
+    BUILDING,
+    BUILT,
+    BUILD_FAILED,
+}
+
+unsafe impl Send for UploadStatus {}
+unsafe impl Sync for UploadStatus {}
 
 impl Default for TemplateApp {
     fn default() -> Self {
+        let (tx, rx) = unbounded_channel::<UploadStatus>();
+        tx.send(UploadStatus::DISCONNECTED);
         Self {
             // Example stuff:
             label: "EasyFTC".to_owned(),
@@ -40,6 +74,11 @@ impl Default for TemplateApp {
             subsystems: vec![],
             code: "".to_string(),
             selected_subsystem: 0,
+            //upload_status: Arc::new(Mutex::new(UploadStatus::DISCONNECTED)),
+            upload_status_tx: tx,
+            upload_status_rx: rx,
+            upload_status: "Disconnected".into(),
+            tokio_runtime: Runtime::new().unwrap(),
         }
     }
 }
@@ -172,44 +211,6 @@ impl eframe::App for TemplateApp {
         });
 
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
-            if ui.button("Upload code").clicked() {
-                let mut opt: ftc_http::Ftc = ftc_http::Ftc::default();
-                opt.upload = true;
-
-                let mut conf = ftc_http::AppConfig::default();
-
-                match ftc_http::RobotController::new(&mut conf) {
-                    Ok(r) => {
-                        // create a tmp directory to write files into
-                        let dir = tempfile::tempdir().unwrap();
-
-                        // write teleop to a file
-                        let file_path = dir.path().join("EasyFTC_teleop.java");
-                        let mut tmpfile = File::create(&file_path).unwrap();
-
-                        write!(tmpfile, "{}", &self.code).unwrap();
-
-                        println!("Uploading files...");
-                        match r.upload_files(vec![PathBuf::from(&file_path)]) {
-                            Ok(_) => match r.build() {
-                                Ok(_) => {
-                                    println!("Build succeeded");
-                                }
-                                Err(_) => {
-                                    println!("Build failed");
-                                }
-                            },
-                            Err(_) => {
-                                println!("Failed to upload files to robot");
-                            }
-                        }
-                    }
-                    Err(_) => {
-                        println!("Error communicating with robot");
-                    }
-                };
-            }
-
             ui.heading("Generated code");
             egui::scroll_area::ScrollArea::horizontal().show(ui, |ui| {
                 egui::scroll_area::ScrollArea::vertical()
@@ -220,6 +221,49 @@ impl eframe::App for TemplateApp {
                         });
                     });
             });
+        });
+
+        egui::Window::new("Upload").show(ctx, |ui| {
+            {
+                match &self.upload_status_rx.try_recv() {
+                    Ok(status) => {
+                        self.upload_status = match status {
+                            UploadStatus::DISCONNECTED => "Not connected to robot".into(),
+                            UploadStatus::CONNECTING => "Connecting to robot".into(),
+                            UploadStatus::CONNECTED => "Connection successful".into(),
+                            UploadStatus::CONNECT_FAILED => "Connection failed".into(),
+                            UploadStatus::UPLOADING => "Uploading code to robot".into(),
+                            UploadStatus::UPLOADED => "Uploaded code to robot".into(),
+                            UploadStatus::UPLOAD_FAILED => "Failed to upload code".into(),
+                            UploadStatus::BUILDING => "Building code".into(),
+                            UploadStatus::BUILT => "Code built. Ready to run".into(),
+                            UploadStatus::BUILD_FAILED => "Build failed".into(),
+                        };
+                    }
+                    Err(_) => {}
+                };
+            }
+
+            ui.label(&self.upload_status);
+
+            if ui.button("Upload code").clicked() {
+                //let status_arc = self.upload_status.clone();
+                let code = self.code.clone();
+                let tx = self.upload_status_tx.clone();
+
+                self.tokio_runtime.spawn(async move {
+                    upload_code(/*status_arc,*/ code, &tx).await;
+                });
+
+                /*futures::executor::block_on(async move {
+                    self.tokio_runtime.spawn(async move {
+                        upload_code(code).await;
+                    }).await.unwrap()
+                })*/
+                /*tokio::task::spawn(async move {
+                    upload_code(code, &tx).await;
+                });*/
+            }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -296,15 +340,6 @@ impl eframe::App for TemplateApp {
 
             self.generate_code();
         });
-
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally choose either panels OR windows.");
-            });
-        }
     }
 }
 
@@ -333,4 +368,86 @@ fn remove_leading_indentation(code: &str) -> String {
         code = &code[end..];
     }
     out
+}
+
+async fn upload_code(code: String, upload_status_tx: &mpsc::UnboundedSender<UploadStatus>) {
+    let mut opt: ftc_http::Ftc = ftc_http::Ftc::default();
+    opt.upload = true;
+
+    upload_status_tx.send(UploadStatus::CONNECTING);
+
+    let mut conf = ftc_http::AppConfig::default();
+
+    match ftc_http::RobotController::new(&mut conf).await {
+        Ok(r) => {
+            upload_status_tx.send(UploadStatus::CONNECTED);
+            // create a tmp directory to write files into
+            let dir = tempfile::tempdir().unwrap();
+
+            // write teleop to a file
+            let file_path = dir.path().join("EasyFTC_teleop.java");
+            let mut tmpfile = File::create(&file_path).unwrap();
+
+            write!(tmpfile, "{}", code).unwrap();
+
+            upload_status_tx.send(UploadStatus::UPLOADING);
+            println!("Uploading files...");
+            match r.upload_files(vec![PathBuf::from(&file_path)]).await {
+                Ok(_) => match r.build().await {
+                    Ok(_) => {
+                        upload_status_tx.send(UploadStatus::BUILT);
+                        println!("Build succeeded");
+                    }
+                    Err(_) => {
+                        upload_status_tx.send(UploadStatus::BUILD_FAILED);
+                        println!("Build failed");
+                    }
+                },
+                Err(_) => {
+                    upload_status_tx.send(UploadStatus::UPLOAD_FAILED);
+                    println!("Failed to upload files to robot");
+                }
+            }
+        }
+        Err(_) => {
+            upload_status_tx.send(UploadStatus::CONNECT_FAILED);
+        }
+    };
+
+    /*match ftc_http::RobotController::new(&mut conf).await {
+            Ok(r) => {
+    upload_status_tx.send(UploadStatus::CONNECTED);
+                // create a tmp directory to write files into
+                let dir = tempfile::tempdir().unwrap();
+
+                // write teleop to a file
+                let file_path = dir.path().join("EasyFTC_teleop.java");
+                let mut tmpfile = File::create(&file_path).unwrap();
+
+                write!(tmpfile, "{}", code).unwrap();
+
+    upload_status_tx.send(UploadStatus::UPLOADING);
+                println!("Uploading files...");
+                match r.upload_files(vec![PathBuf::from(&file_path)]).await {
+                    Ok(_) => match r.build().await {
+                        Ok(_) => {
+    upload_status_tx.send(UploadStatus::BUILT);
+                            println!("Build succeeded");
+                        }
+                        Err(_) => {
+    upload_status_tx.send(UploadStatus::BUILD_FAILED);
+                            println!("Build failed");
+                        }
+                    },
+                    Err(_) => {
+    upload_status_tx.send(UploadStatus::UPLOAD_FAILED);
+                        println!("Failed to upload files to robot");
+                    }
+                }
+            }
+            Err(_) => {
+    upload_status_tx.send(UploadStatus::CONNECT_FAILED);
+                println!("Error communicating with robot");
+            }
+        };*/
 }

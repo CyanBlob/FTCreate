@@ -7,7 +7,7 @@ pub struct Theme {
 
 impl Theme {
     pub fn new(cfg: &AppStyle) -> Self {
-        let mut visuals = Visuals::dark();
+        let visuals = Visuals::dark();
 
         //visuals.widgets.noninteractive.bg_fill = cfg.background; visuals.widgets.noninteractive.fg_stroke.color = cfg.text_color;
         //visuals.widgets.noninteractive.rounding = cfg.dropdown_rounding;

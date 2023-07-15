@@ -329,7 +329,7 @@ impl MotorGenerator for DcMotor {
     fn new(name: String) -> Self {
         DcMotor {
             direction: generators::motors::motor::MotorDirection::FORWARD,
-            mode: generators::motors::motor::MotorMode::RUN_TO_POSITION,
+            mode: generators::motors::motor::MotorMode::RUN_USING_ENCODERS,
             max_speed: 1.0,
             mecanum_position: MecanumPosition::FrontLeft,
             arcade_position: ArcadePosition::Left,

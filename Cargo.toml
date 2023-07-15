@@ -9,13 +9,15 @@ edition = "2021"
 default = ["syntect"]
 
 [dependencies]
-# ftc_http = { path = "../ftc_http" }
-ftc_http = {git = "https://github.com/CyanBlob/ftc_http"}
+ftc_http = { path = "../ftc_http" }
+#ftc_http = {git = "https://github.com/CyanBlob/ftc_http", branch = "async"}
 
 serde_json = "1.0.89"
 
 egui = {version = "0.21.0"}
 egui_extras = {version = "0.21.0", features = ["image"]}
+
+tokio = {version = "1.28.2", features = ["sync"]}
 
 eframe = { version = "0.21.0", default-features = false, features = [
     "accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
