@@ -13,7 +13,9 @@ use std::io::Write;
 use std::path::PathBuf;
 use tokio::sync::{mpsc, mpsc::unbounded_channel, TryAcquireError};
 
+#[cfg(not(target_arch = "wasm32"))]
 use tokio;
+#[cfg(not(target_arch = "wasm32"))]
 use tokio::runtime::Runtime;
 
 pub mod syntax_highlighting;
@@ -41,6 +43,7 @@ pub struct TemplateApp {
     upload_status: String,
 
     #[serde(skip)]
+    #[cfg(not(target_arch = "wasm32"))]
     tokio_runtime: Runtime,
 }
 
@@ -75,6 +78,7 @@ impl Default for TemplateApp {
             upload_status_tx: tx,
             upload_status_rx: rx,
             upload_status: "Disconnected".into(),
+            #[cfg(not(target_arch = "wasm32"))]
             tokio_runtime: Runtime::new().unwrap(),
         }
     }
@@ -190,7 +194,7 @@ impl eframe::App for TemplateApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let mut width: f32 = 0.0;
+        /*let mut width: f32 = 0.0;
 
         //#[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -205,7 +209,7 @@ impl eframe::App for TemplateApp {
                     }
                 });
             });
-        });
+        });*/
 
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
             ui.heading("Generated code");
@@ -220,7 +224,8 @@ impl eframe::App for TemplateApp {
             });
         });
 
-        egui::Window::new("Upload").show(ctx, |ui| {
+        #[cfg(not(target_arch = "wasm32"))]
+        egui::TopBottomPanel::bottom("Upload").show(ctx, |ui| {
             {
                 match &self.upload_status_rx.try_recv() {
                     Ok(status) => {
@@ -228,7 +233,10 @@ impl eframe::App for TemplateApp {
                             UploadStatus::DISCONNECTED => "Not connected to robot".into(),
                             UploadStatus::CONNECTING => "Connecting to robot".into(),
                             UploadStatus::CONNECTED => "Connection successful".into(),
-                            UploadStatus::CONNECT_FAILED => "Connection failed".into(),
+                            UploadStatus::CONNECT_FAILED => {
+                                "Connection failed. Ensure you're on the robot's WiFi network"
+                                    .into()
+                            }
                             UploadStatus::UPLOADING => "Uploading code to robot".into(),
                             UploadStatus::UPLOADED => "Uploaded code to robot".into(),
                             UploadStatus::UPLOAD_FAILED => "Failed to upload code".into(),
@@ -357,6 +365,7 @@ fn remove_leading_indentation(code: &str) -> String {
     out
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 async fn upload_code(code: String, upload_status_tx: &mpsc::UnboundedSender<UploadStatus>) {
     let mut opt: ftc_http::Ftc = ftc_http::Ftc::default();
     opt.upload = true;
