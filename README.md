@@ -6,11 +6,14 @@ EasyFTC is a tool meant to allow FTC teams to generate fully-functional FTC robo
 ## V1.0 Goals
 - Can generate code for most/all "standard" FRC robots for each season
 - Full controller mapping
-- Intuitive, attractive UI
+- Intuitive
 - Web and desktop application
 - No programming knowledge required
-- Ability to upload+compile code directly from EasyFTC; no Onbot Java required
+- Ability to upload+compile code directly from EasyFTC; no Onbot Java required (_desktop only_)
 
 ## Long term goals
 - Auton generator
 - Ability to tweak generated code and merge with subsequently generated code
+
+## Contact
+If you have any specific needs that aren't met by EasyFTC, or you need help using it, please feel free to email me at [andrew@robochargers.io](mailto:andrew@robochargers.io)

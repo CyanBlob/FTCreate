@@ -69,7 +69,6 @@ impl Default for TemplateApp {
         let (tx, rx) = unbounded_channel::<UploadStatus>();
         tx.send(UploadStatus::DISCONNECTED);
         Self {
-            // Example stuff:
             label: "EasyFTC".to_owned(),
             drivetrain: Subsystem::new("Drivetrain".to_owned(), true),
             subsystems: vec![],
@@ -194,22 +193,6 @@ impl eframe::App for TemplateApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        /*let mut width: f32 = 0.0;
-
-        //#[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            width = ui.available_width();
-
-            // The top panel is often a good place for a menu bar:
-            egui::menu::bar(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("This does nothing right now").clicked() {
-                        //_frame.close();
-                        //self.save(storage)
-                    }
-                });
-            });
-        });*/
 
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
             ui.heading("Generated code");
@@ -260,6 +243,13 @@ impl eframe::App for TemplateApp {
                 });
             }
         });
+
+        #[cfg(target_arch = "wasm32")]
+        egui::TopBottomPanel::bottom("Upload").show(ctx, |ui| {
+            ui.label("Code upload only works from desktop version of EasyFTC: ");
+            ui.hyperlink("https://github.com/CyanBlob/EasyFTC/releases").on_hover_text("Download page");
+        });
+
 
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::TopBottomPanel::top("subsystem_panel").show(ctx, |ui| {
