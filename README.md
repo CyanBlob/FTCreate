@@ -4,7 +4,7 @@ FTCreate is a tool meant to allow FTC teams to generate fully-functional FTC rob
 ![FTCreate screenshot](https://raw.githubusercontent.com/CyanBlob/FTCreate/main/ftcreate_screenshot.png)
 
 ## V1.0 Goals
-- Can generate code for most/all "standard" FRC robots for each season
+- Can generate code for most/all "standard" FTC robots for each season
 - Full controller mapping
 - Intuitive
 - Web and desktop application
