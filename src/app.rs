@@ -69,7 +69,7 @@ impl Default for TemplateApp {
         let (tx, rx) = unbounded_channel::<UploadStatus>();
         tx.send(UploadStatus::DISCONNECTED);
         Self {
-            label: "EasyFTC".to_owned(),
+            label: "FTCreate".to_owned(),
             drivetrain: Subsystem::new("Drivetrain".to_owned(), true),
             subsystems: vec![],
             code: "".to_string(),
@@ -132,9 +132,9 @@ impl TemplateApp {
 
         new_code += "\n";
 
-        new_code += r#"@TeleOp(name="EasyFTC Teleop", group="Linear Opmode")"#;
+        new_code += r#"@TeleOp(name="FTCreate Teleop", group="Linear Opmode")"#;
         new_code += "\n";
-        new_code += "public class EasyFTC_teleop extends LinearOpMode {\n\
+        new_code += "public class FTCreate_teleop extends LinearOpMode {\n\
                 \n\tprivate ElapsedTime runtime = new ElapsedTime();\n\n";
 
         // global variables
@@ -246,8 +246,8 @@ impl eframe::App for TemplateApp {
 
         #[cfg(target_arch = "wasm32")]
         egui::TopBottomPanel::bottom("Upload").show(ctx, |ui| {
-            ui.label("Code upload only works from desktop version of EasyFTC: ");
-            ui.hyperlink("https://github.com/CyanBlob/EasyFTC/releases").on_hover_text("Download page");
+            ui.label("Code upload only works from desktop version of FTCreate: ");
+            ui.hyperlink("https://github.com/CyanBlob/FTCreate/releases").on_hover_text("Download page");
         });
 
 
@@ -372,7 +372,7 @@ async fn upload_code(code: String, upload_status_tx: &mpsc::UnboundedSender<Uplo
             let dir = tempfile::tempdir().unwrap();
 
             // write teleop to a file
-            let file_path = dir.path().join("EasyFTC_teleop.java");
+            let file_path = dir.path().join("FTCreate_teleop.java");
             let mut tmpfile = File::create(&file_path).unwrap();
 
             write!(tmpfile, "{}", code).unwrap();
