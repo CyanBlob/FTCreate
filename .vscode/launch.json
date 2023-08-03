@@ -4,16 +4,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'easy_ftc'",
+            "name": "Debug unit tests in library 'ftcreate'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
                     "--lib",
-                    "--package=easy_ftc"
+                    "--package=ftcreate"
                 ],
                 "filter": {
-                    "name": "easy_ftc",
+                    "name": "ftcreate",
                     "kind": "lib"
                 }
             },
@@ -23,15 +23,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'easy_ftc'",
+            "name": "Debug executable 'ftcreate'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=easy_ftc",
-                    "--package=easy_ftc"
+                    "--bin=ftcreate",
+                    "--package=ftcreate"
                 ],
                 "filter": {
-                    "name": "easy_ftc",
+                    "name": "ftcreate",
                     "kind": "bin"
                 }
             },
@@ -41,16 +41,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'easy_ftc'",
+            "name": "Debug unit tests in executable 'ftcreate'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=easy_ftc",
-                    "--package=easy_ftc"
+                    "--bin=ftcreate",
+                    "--package=ftcreate"
                 ],
                 "filter": {
-                    "name": "easy_ftc",
+                    "name": "ftcreate",
                     "kind": "bin"
                 }
             },
