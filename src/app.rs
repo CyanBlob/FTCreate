@@ -28,6 +28,7 @@ pub mod theme;
 pub struct TemplateApp {
     // Example stuff:
     label: String,
+    file_name: String,
 
     drivetrain: Subsystem<DcMotor, RevServo>,
     subsystems: Vec<Subsystem<DcMotor, RevServo>>,
@@ -70,6 +71,7 @@ impl Default for TemplateApp {
         tx.send(UploadStatus::DISCONNECTED);
         Self {
             label: "FTCreate".to_owned(),
+            file_name: "FTCreate".to_owned(),
             drivetrain: Subsystem::new("Drivetrain".to_owned(), true),
             subsystems: vec![],
             code: "".to_string(),
@@ -132,10 +134,10 @@ impl TemplateApp {
 
         new_code += "\n";
 
-        new_code += r#"@TeleOp(name="FTCreate Teleop", group="Linear Opmode")"#;
+        new_code += &format!(r#"@TeleOp(name="{} Teleop", group="Linear Opmode")"#, &self.file_name);
         new_code += "\n";
-        new_code += "public class FTCreate_teleop extends LinearOpMode {\n\
-                \n\tprivate ElapsedTime runtime = new ElapsedTime();\n\n";
+        new_code += &format!("public class {} extends LinearOpMode {{\n\
+                \n\tprivate ElapsedTime runtime = new ElapsedTime();\n\n", &self.file_name);
 
         // global variables
         new_code += &self.drivetrain.generate_globals();
@@ -237,9 +239,10 @@ impl eframe::App for TemplateApp {
             if ui.button("Upload code").clicked() {
                 let code = self.code.clone();
                 let tx = self.upload_status_tx.clone();
+                let file_name = self.file_name.clone();
 
                 self.tokio_runtime.spawn(async move {
-                    upload_code(code, &tx).await;
+                    upload_code(code, &tx, file_name.to_owned()).await;
                 });
             }
         });
@@ -247,9 +250,8 @@ impl eframe::App for TemplateApp {
         #[cfg(target_arch = "wasm32")]
         egui::TopBottomPanel::bottom("Upload").show(ctx, |ui| {
             ui.label("Code upload only works from desktop version of FTCreate: ");
-            ui.hyperlink("https://github.com/CyanBlob/FTCreate/releases").on_hover_text("Download page");
+            ui.hyperlink("https://github.com/FRC3005/FTCreate/releases").on_hover_text("Download page");
         });
-
 
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::TopBottomPanel::top("subsystem_panel").show(ctx, |ui| {
@@ -281,6 +283,13 @@ impl eframe::App for TemplateApp {
             ui.add_space(30.0);
 
             if self.selected_subsystem == 0 {
+                ui.horizontal(|ui| {
+                    ui.label("Teleop name: ");
+                    ui.text_edit_singleline(&mut self.file_name);
+                });
+                
+                ui.add_space(10.0);
+
                 ui.heading("Drivetrain Configuration");
             } else {
                 ui.heading(format!(
@@ -356,7 +365,7 @@ fn remove_leading_indentation(code: &str) -> String {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-async fn upload_code(code: String, upload_status_tx: &mpsc::UnboundedSender<UploadStatus>) {
+async fn upload_code(code: String, upload_status_tx: &mpsc::UnboundedSender<UploadStatus>, file_name: String) {
     let mut opt: ftc_http::Ftc = ftc_http::Ftc::default();
     opt.upload = true;
 
@@ -372,14 +381,14 @@ async fn upload_code(code: String, upload_status_tx: &mpsc::UnboundedSender<Uplo
             let dir = tempfile::tempdir().unwrap();
 
             // write teleop to a file
-            let file_path = dir.path().join("FTCreate_teleop.java");
+            let file_path = dir.path().join(&format!("{}.java", &file_name));
             let mut tmpfile = File::create(&file_path).unwrap();
 
             write!(tmpfile, "{}", code).unwrap();
 
             upload_status_tx.send(UploadStatus::UPLOADING);
             println!("Uploading files...");
-            match r.upload_files(vec![PathBuf::from(&file_path)]).await {
+            match r.upload_files(vec![PathBuf::from(&file_path)], &format!("{}.java", &file_name)).await {
                 Ok(_) => {
                     upload_status_tx.send(UploadStatus::BUILDING);
                     match r.build().await {

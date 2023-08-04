@@ -1122,7 +1122,7 @@ dependencies = [
 [[package]]
 name = "ftc_http"
 version = "2.2.0"
-source = "git+https://github.com/CyanBlob/ftc_http?branch=async#7bae9f0f864799fa0160bfec8adf514b8d9f96e5"
+source = "git+https://github.com/CyanBlob/ftc_http?branch=async#18758920112e93ec21172e7fe2ffe22951f60d2f"
 dependencies = [
  "confy",
  "lazy_static",
@@ -1137,7 +1137,7 @@ dependencies = [
 
 [[package]]
 name = "ftcreate"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "console_error_panic_hook",
  "eframe",
