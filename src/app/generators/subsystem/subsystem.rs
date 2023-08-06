@@ -17,8 +17,8 @@ pub enum DrivetrainType {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Subsystem<
-    T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
-    U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
+    T: MotorGenerator + PartialEq + PartialOrd + Clone,
+    U: ServoGenerator + PartialEq + PartialOrd + Clone,
 > {
     pub motors: Vec<T>,
     pub servos: Vec<U>,
@@ -29,8 +29,8 @@ pub struct Subsystem<
 }
 
 impl<
-        T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
-        U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
+        T: MotorGenerator + PartialEq + PartialOrd + Clone,
+        U: ServoGenerator + PartialEq + PartialOrd + Clone,
     > generator::Generator for Subsystem<T, U>
 {
     fn generate_includes(&self) -> String {
@@ -259,8 +259,8 @@ impl<
 }
 
 impl<
-        T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
-        U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
+        T: MotorGenerator + PartialEq + PartialOrd + Clone,
+        U: ServoGenerator + PartialEq + PartialOrd + Clone,
     > SubsystemGenerator for Subsystem<T, U>
 {
     fn get_name(&self) -> String {
@@ -269,8 +269,8 @@ impl<
 }
 
 impl<
-        T: MotorGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
-        U: ServoGenerator + std::cmp::PartialEq + std::cmp::PartialOrd + std::clone::Clone,
+        T: MotorGenerator + PartialEq + PartialOrd + Clone,
+        U: ServoGenerator + PartialEq + PartialOrd + Clone,
     > Subsystem<T, U>
 {
     pub fn new(name: String, is_drivetrain: bool) -> Self {

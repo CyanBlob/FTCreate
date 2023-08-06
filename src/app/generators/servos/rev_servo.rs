@@ -6,18 +6,16 @@ use super::super::generator;
 use super::servo;
 
 use crate::app::generators::{
-    self,
     generator::GeneratorSerialize,
     keybinding::keybinding::{BooleanButton, Keybinding},
-    servos,
 };
 
 use servo::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 pub struct RevServo {
-    pub direction: servos::servo::ServoDirection,
-    pub mode: servos::servo::ServoMode,
+    pub direction: ServoDirection,
+    pub mode: ServoMode,
     pub name: String,
     pub positions: Vec<Keybinding<f32>>,
 }
@@ -88,7 +86,7 @@ impl generator::Generator for RevServo {
                 .selected_text(format!("{:?}", &mut self.mode))
                 .width(170.0)
                 .show_ui(ui, |ui| {
-                    for mode in servo::ServoMode::iter() {
+                    for mode in ServoMode::iter() {
                         ui.selectable_value(&mut self.mode, mode, format!("{:?}", mode));
                     }
                 });
@@ -99,7 +97,7 @@ impl generator::Generator for RevServo {
                 .selected_text(format!("{:?}", &mut self.direction))
                 .width(170.0)
                 .show_ui(ui, |ui| {
-                    for direction in servo::ServoDirection::iter() {
+                    for direction in ServoDirection::iter() {
                         ui.selectable_value(
                             &mut self.direction,
                             direction,
@@ -184,8 +182,8 @@ impl Servo for RevServo {}
 impl ServoGenerator for RevServo {
     fn new(name: String) -> Self {
         RevServo {
-            direction: generators::servos::servo::ServoDirection::FORWARD,
-            mode: generators::servos::servo::ServoMode::Servo,
+            direction: ServoDirection::FORWARD,
+            mode: ServoMode::Servo,
             name: name,
             positions: vec![],
         }

@@ -9,7 +9,6 @@ use crate::app::generators::{
     self,
     generator::GeneratorSerialize,
     keybinding::keybinding::{Axis, AxisKeybinding, BooleanButton, Keybinding},
-    motors,
     subsystem::subsystem::DrivetrainType,
 };
 
@@ -17,11 +16,11 @@ use motor::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 pub struct DcMotor {
-    pub direction: motors::motor::MotorDirection,
-    pub mode: motors::motor::MotorMode,
+    pub direction: MotorDirection,
+    pub mode: MotorMode,
     pub max_speed: f64,
-    pub mecanum_position: motors::motor::MecanumPosition,
-    pub arcade_position: motors::motor::ArcadePosition,
+    pub mecanum_position: MecanumPosition,
+    pub arcade_position: ArcadePosition,
     pub name: String,
     pub positions: Vec<Keybinding<i32>>,
     pub speeds_button: Vec<Keybinding<f32>>,
@@ -75,63 +74,67 @@ impl generator::Generator for DcMotor {
             &self.name
         ) + &format!("\n\t\t{}.setTargetPosition(0);\n", &self.name)
             + &format!(
-                "\t\t{}.setMode(DcMotor.RunMode.{:?});\n\n",
-                &self.name, &self.mode
-            )
+            "\t\t{}.setMode(DcMotor.RunMode.{:?});\n\n",
+            &self.name, &self.mode
+        )
     }
 
     fn generate_loop(&self) -> String {
         let mut code = match self.drivetrain_type {
-        Some(DrivetrainType::Mecanum) => match self.mecanum_position {
-            MecanumPosition::FrontLeft =>
-                format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive - strafe + turn, -{}, {}));\n\n",
-                    &self.name, &self.name, self.max_speed, self.max_speed
-                ),
-            MecanumPosition::FrontRight =>
-                format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive + strafe - turn, -{}, {}));\n\n",
-                    &self.name, &self.name, self.max_speed, self.max_speed
-                ),
-            MecanumPosition::RearLeft =>
-                format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive + strafe + turn, -{}, {}));\n\n",
-                    &self.name, &self.name, self.max_speed, self.max_speed
-                ),
-            MecanumPosition::RearRight =>
-                format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive - strafe - turn, -{}, {}));\n\n",
-                    &self.name, &self.name, self.max_speed, self.max_speed
-                ),
-        },
+            Some(DrivetrainType::Mecanum) => match self.mecanum_position {
+                MecanumPosition::FrontLeft =>
+                    format!(
+                        "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive - strafe + turn, -{}, {}));\n\n",
+                        &self.name, &self.name, self.max_speed, self.max_speed
+                    ),
+                MecanumPosition::FrontRight =>
+                    format!(
+                        "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive + strafe - turn, -{}, {}));\n\n",
+                        &self.name, &self.name, self.max_speed, self.max_speed
+                    ),
+                MecanumPosition::RearLeft =>
+                    format!(
+                        "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive + strafe + turn, -{}, {}));\n\n",
+                        &self.name, &self.name, self.max_speed, self.max_speed
+                    ),
+                MecanumPosition::RearRight =>
+                    format!(
+                        "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive - strafe - turn, -{}, {}));\n\n",
+                        &self.name, &self.name, self.max_speed, self.max_speed
+                    ),
+            },
             Some(DrivetrainType::Arcade) => {
                 match self.arcade_position {
                     ArcadePosition::Left => {
-                format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive + turn, -{}, {}));\n\n",
-                    &self.name, &self.name, self.max_speed, self.max_speed
-                )},
-                    ArcadePosition::Right => {
-                format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive - turn, -{}, {}));\n\n",
-                    &self.name, &self.name, self.max_speed, self.max_speed
-                )},
+                        format!(
+                            "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive + turn, -{}, {}));\n\n",
+                            &self.name, &self.name, self.max_speed, self.max_speed
+                        )
                     }
-                },
+                    ArcadePosition::Right => {
+                        format!(
+                            "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(drive - turn, -{}, {}));\n\n",
+                            &self.name, &self.name, self.max_speed, self.max_speed
+                        )
+                    }
+                }
+            }
             Some(DrivetrainType::Tank) => {
                 match self.arcade_position {
                     ArcadePosition::Left => {
-                format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(driveLeft, -{}, {}));\n\n",
-                    &self.name, &self.name, self.max_speed, self.max_speed
-                )},
+                        format!(
+                            "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(driveLeft, -{}, {}));\n\n",
+                            &self.name, &self.name, self.max_speed, self.max_speed
+                        )
+                    }
                     ArcadePosition::Right => {
-                format!(
-                    "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(driveRight, -{}, {}));\n\n",
-                    &self.name, &self.name, self.max_speed, self.max_speed
-                )},
+                        format!(
+                            "\t\t\t// {} loop\n\t\t\t{}.setPower(Range.clip(driveRight, -{}, {}));\n\n",
+                            &self.name, &self.name, self.max_speed, self.max_speed
+                        )
                     }
                 }
+            }
             None => {
                 let mut code = String::new();
 
@@ -139,7 +142,6 @@ impl generator::Generator for DcMotor {
 
                 for speed_button in &self.speeds_button {
                     if let Some(button) = speed_button.button {
-
                         code += &format!("\t\t\tif (gamepad1.{:?}) {{\n", button);
 
                         code += &format!(
@@ -147,32 +149,28 @@ impl generator::Generator for DcMotor {
                             &self.name, &speed_button.value);
 
                         code += &format!("\t\t\t}}\n\n");
-                        }
                     }
+                }
 
                 for speed_axis in &self.speeds_axis {
                     if let Some(axis) = speed_axis.axis {
-
                         match speed_axis.reversed {
                             true => {
-
-                        code += &format!(
-                            "\t\t\t{}.setPower(gamepad1.{:?} * -1.0f);\n\n",
-                            &self.name, &axis)
-                            },
+                                code += &format!(
+                                    "\t\t\t{}.setPower(gamepad1.{:?} * -1.0f);\n\n",
+                                    &self.name, &axis)
+                            }
                             false => {
-
-                        code += &format!(
-                            "\t\t\t{}.setPowerTest(gamepad1.{:?});\n\n",
-                            &self.name, &axis)
-                            },
+                                code += &format!(
+                                    "\t\t\t{}.setPowerTest(gamepad1.{:?});\n\n",
+                                    &self.name, &axis)
+                            }
                         }
-
                     }
                 }
                 code
             }.to_owned(),
-    };
+        };
         // generate keybindings
         for i in 0..self.positions.len() {
             if self.positions.iter().nth(i).unwrap().button != None {
@@ -210,7 +208,7 @@ impl generator::Generator for DcMotor {
                 .selected_text(format!("{:?}", &mut self.mode))
                 .width(170.0)
                 .show_ui(ui, |ui| {
-                    for mode in motor::MotorMode::iter() {
+                    for mode in MotorMode::iter() {
                         ui.selectable_value(&mut self.mode, mode, format!("{:?}", mode));
                     }
                 });
@@ -221,7 +219,7 @@ impl generator::Generator for DcMotor {
                 .selected_text(format!("{:?}", &mut self.direction))
                 .width(170.0)
                 .show_ui(ui, |ui| {
-                    for direction in motor::MotorDirection::iter() {
+                    for direction in MotorDirection::iter() {
                         ui.selectable_value(
                             &mut self.direction,
                             direction,

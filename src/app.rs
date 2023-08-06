@@ -1,4 +1,5 @@
 use crate::app::generators::generator::Generator;
+
 pub mod generators;
 
 use generators::motors::dc_motor::DcMotor;
@@ -11,7 +12,7 @@ use self::theme::Theme;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use tokio::sync::{mpsc, mpsc::unbounded_channel, TryAcquireError};
+use tokio::sync::{mpsc, mpsc::unbounded_channel};
 
 #[cfg(not(target_arch = "wasm32"))]
 use tokio;
@@ -49,6 +50,7 @@ pub struct TemplateApp {
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
+#[allow(non_camel_case_types)]
 enum UploadStatus {
     DISCONNECTED,
     CONNECTING,
@@ -63,12 +65,13 @@ enum UploadStatus {
 }
 
 unsafe impl Send for UploadStatus {}
+
 unsafe impl Sync for UploadStatus {}
 
 impl Default for TemplateApp {
     fn default() -> Self {
         let (tx, rx) = unbounded_channel::<UploadStatus>();
-        tx.send(UploadStatus::DISCONNECTED);
+        tx.send(UploadStatus::DISCONNECTED).unwrap();
         Self {
             label: "FTCreate".to_owned(),
             file_name: "FTCreate".to_owned(),
@@ -194,11 +197,6 @@ impl TemplateApp {
 }
 
 impl eframe::App for TemplateApp {
-    /// Called by the framework to save state before shutdown.
-    fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        eframe::set_value(storage, eframe::APP_KEY, self);
-    }
-
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
@@ -316,7 +314,7 @@ impl eframe::App for TemplateApp {
                             .unwrap()
                             .name,
                     )
-                    .desired_width(100.0);
+                        .desired_width(100.0);
                     ui.add(text_edit);
                     ui.label("Rename subsystem");
                 });
@@ -341,11 +339,16 @@ impl eframe::App for TemplateApp {
             self.generate_code();
         });
     }
+
+    /// Called by the framework to save state before shutdown.
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        eframe::set_value(storage, eframe::APP_KEY, self);
+    }
 }
 
 fn show_code(ui: &mut egui::Ui, code: &str, width: f32) {
     let code = remove_leading_indentation(code.trim_start_matches('\n'));
-    crate::app::syntax_highlighting::code_view_ui(ui, &code, width);
+    syntax_highlighting::code_view_ui(ui, &code, width);
 }
 
 fn remove_leading_indentation(code: &str) -> String {
@@ -379,13 +382,13 @@ async fn upload_code(
     let mut opt: ftc_http::Ftc = ftc_http::Ftc::default();
     opt.upload = true;
 
-    upload_status_tx.send(UploadStatus::CONNECTING);
+    upload_status_tx.send(UploadStatus::CONNECTING).unwrap();
 
     let mut conf = ftc_http::AppConfig::default();
 
     match ftc_http::RobotController::new(&mut conf).await {
         Ok(r) => {
-            upload_status_tx.send(UploadStatus::CONNECTED);
+            upload_status_tx.send(UploadStatus::CONNECTED).unwrap();
 
             // create a tmp directory to write files into
             let dir = tempfile::tempdir().unwrap();
@@ -396,7 +399,7 @@ async fn upload_code(
 
             write!(tmpfile, "{}", code).unwrap();
 
-            upload_status_tx.send(UploadStatus::UPLOADING);
+            upload_status_tx.send(UploadStatus::UPLOADING).unwrap();
             println!("Uploading files...");
             match r
                 .upload_files(
@@ -406,26 +409,26 @@ async fn upload_code(
                 .await
             {
                 Ok(_) => {
-                    upload_status_tx.send(UploadStatus::BUILDING);
+                    upload_status_tx.send(UploadStatus::BUILDING).unwrap();
                     match r.build().await {
                         Ok(_) => {
-                            upload_status_tx.send(UploadStatus::BUILT);
+                            upload_status_tx.send(UploadStatus::BUILT).unwrap();
                             println!("Build succeeded");
                         }
                         Err(_) => {
-                            upload_status_tx.send(UploadStatus::BUILD_FAILED);
+                            upload_status_tx.send(UploadStatus::BUILD_FAILED).unwrap();
                             println!("Build failed");
                         }
                     }
                 }
                 Err(_) => {
-                    upload_status_tx.send(UploadStatus::UPLOAD_FAILED);
+                    upload_status_tx.send(UploadStatus::UPLOAD_FAILED).unwrap();
                     println!("Failed to upload files to robot");
                 }
             }
         }
         Err(_) => {
-            upload_status_tx.send(UploadStatus::CONNECT_FAILED);
+            upload_status_tx.send(UploadStatus::CONNECT_FAILED).unwrap();
         }
     };
 }
