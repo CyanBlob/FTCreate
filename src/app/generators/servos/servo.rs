@@ -17,6 +17,8 @@ pub enum ServoMode {
 }
 
 pub trait ServoGenerator: Servo + Generator {
-    fn new(name: String) -> Self where Self: Sized;
+    fn new(name: String) -> Self
+    where
+        Self: Sized;
 }
 pub trait Servo {}

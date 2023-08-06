@@ -7,9 +7,9 @@ pub struct Keybinding<T> {
     pub button: Option<BooleanButton>,
 }
 
-#[allow(unused)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 pub struct AxisKeybinding {
-    pub value: f32,
+    pub reversed: bool,
     pub axis: Option<Axis>,
 }
 
@@ -26,7 +26,7 @@ impl AxisKeybinding {
     #[allow(unused)]
     pub fn new(value: f32) -> Self {
         AxisKeybinding {
-            value: value,
+            reversed: false,
             axis: None,
         }
     }

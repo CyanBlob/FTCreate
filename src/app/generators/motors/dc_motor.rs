@@ -8,7 +8,7 @@ use super::motor;
 use crate::app::generators::{
     self,
     generator::GeneratorSerialize,
-    keybinding::keybinding::{BooleanButton, Keybinding},
+    keybinding::keybinding::{Axis, AxisKeybinding, BooleanButton, Keybinding},
     motors,
     subsystem::subsystem::DrivetrainType,
 };
@@ -24,6 +24,8 @@ pub struct DcMotor {
     pub arcade_position: motors::motor::ArcadePosition,
     pub name: String,
     pub positions: Vec<Keybinding<i32>>,
+    pub speeds_button: Vec<Keybinding<f32>>,
+    pub speeds_axis: Vec<AxisKeybinding>,
     pub drivetrain_type: Option<DrivetrainType>,
 }
 
@@ -71,13 +73,11 @@ impl generator::Generator for DcMotor {
         ) + &format!(
             "\t\t{}.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);\n",
             &self.name
-        ) + &format!(
-            "\n\t\t{}.setTargetPosition(0);\n",
-            &self.name
-        ) + &format!(
-            "\t\t{}.setMode(DcMotor.RunMode.{:?});\n\n",
-            &self.name, &self.mode
-        )
+        ) + &format!("\n\t\t{}.setTargetPosition(0);\n", &self.name)
+            + &format!(
+                "\t\t{}.setMode(DcMotor.RunMode.{:?});\n\n",
+                &self.name, &self.mode
+            )
     }
 
     fn generate_loop(&self) -> String {
@@ -132,7 +132,46 @@ impl generator::Generator for DcMotor {
                 )},
                     }
                 }
-            None => "".to_string(),
+            None => {
+                let mut code = String::new();
+
+                code += &format!("\t\t\t// {} keybindings\n", &self.name);
+
+                for speed_button in &self.speeds_button {
+                    if let Some(button) = speed_button.button {
+
+                        code += &format!("\t\t\tif (gamepad1.{:?}) {{\n", button);
+
+                        code += &format!(
+                            "\t\t\t\t{}.setPower({:?});\n",
+                            &self.name, &speed_button.value);
+
+                        code += &format!("\t\t\t}}\n\n");
+                        }
+                    }
+
+                for speed_axis in &self.speeds_axis {
+                    if let Some(axis) = speed_axis.axis {
+
+                        match speed_axis.reversed {
+                            true => {
+
+                        code += &format!(
+                            "\t\t\t{}.setPower(gamepad1.{:?} * -1.0f);\n\n",
+                            &self.name, &axis)
+                            },
+                            false => {
+
+                        code += &format!(
+                            "\t\t\t{}.setPowerTest(gamepad1.{:?});\n\n",
+                            &self.name, &axis)
+                            },
+                        }
+
+                    }
+                }
+                code
+            }.to_owned(),
     };
         // generate keybindings
         for i in 0..self.positions.len() {
@@ -223,6 +262,8 @@ impl generator::Generator for DcMotor {
 
         if self.mode == MotorMode::RUN_TO_POSITION {
             self.render_positions(ui, id);
+        } else if self.drivetrain_type == None {
+            self.render_keybindings(ui, id);
         }
     }
 }
@@ -288,6 +329,116 @@ impl DcMotor {
         });
     }
 
+    fn render_keybindings(&mut self, ui: &mut egui::Ui, _id: usize) {
+        ui.add_space(10.0);
+        ui.label("Keybindings");
+
+        let mut removed_bool_positions = vec![];
+        let mut removed_axis_positions = vec![];
+
+        for (i, speed) in self.speeds_button.iter_mut().enumerate() {
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.add(egui::Separator::default());
+
+                    ui.add(
+                        egui::Slider::new(&mut speed.value, -1.0..=1.0)
+                            .text("Speed")
+                            .step_by(0.01)
+                            .max_decimals(2),
+                    );
+
+                    if ui.button("Delete").clicked() {
+                        removed_bool_positions.push(i);
+                    }
+                });
+
+                let binding_text = match speed.button {
+                    Some(bind) => format!("{:?}", bind),
+                    None => "None".to_owned(),
+                };
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Separator::default());
+                    ui.add_space(10.0);
+
+                    egui::ComboBox::new(format!("{}{}", &self.name, &i), "Keybinding")
+                        .selected_text(format!("{:?}", binding_text))
+                        .width(105.0)
+                        .show_ui(ui, |ui| {
+                            for button in BooleanButton::iter() {
+                                ui.selectable_value(
+                                    &mut speed.button,
+                                    Some(button),
+                                    format!("{:?}", button),
+                                );
+                            }
+                        });
+                });
+
+                ui.add_space(10.0);
+            });
+        }
+
+        for (i, speed) in self.speeds_axis.iter_mut().enumerate() {
+            ui.vertical(|ui| {
+                let binding_text = match speed.axis {
+                    Some(bind) => format!("{:?}", bind),
+                    None => "None".to_owned(),
+                };
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Separator::default());
+                    ui.add_space(10.0);
+
+                    egui::ComboBox::new(format!("{}{}2", &self.name, &i), "Axis")
+                        .selected_text(format!("{:?}", binding_text))
+                        .width(105.0)
+                        .show_ui(ui, |ui| {
+                            for button in Axis::iter() {
+                                ui.selectable_value(
+                                    &mut speed.axis,
+                                    Some(button),
+                                    format!("{:?}", button),
+                                );
+                            }
+                        });
+
+                    if ui.button("Delete").clicked() {
+                        removed_axis_positions.push(i);
+                    }
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(egui::Separator::default());
+
+                    ui.checkbox(&mut speed.reversed, "Reverse");
+                });
+
+                ui.add_space(10.0);
+            });
+        }
+
+        for i in removed_bool_positions {
+            self.speeds_button.remove(i);
+        }
+
+        for i in removed_axis_positions {
+            self.speeds_axis.remove(i);
+        }
+
+        ui.horizontal(|ui| {
+            if ui.button("Add keybinding").clicked() {
+                self.speeds_button.push(Keybinding::new(0.0));
+            }
+        });
+        ui.horizontal(|ui| {
+            if ui.button("Add control axis").clicked() {
+                self.speeds_axis.push(AxisKeybinding::new(0.0));
+            }
+        });
+    }
+
     fn render_mecanum(&mut self, ui: &mut egui::Ui, id: usize) {
         ui.push_id(id + 100, |ui| {
             egui::ComboBox::from_label("Mecanum position")
@@ -335,6 +486,8 @@ impl MotorGenerator for DcMotor {
             arcade_position: ArcadePosition::Left,
             name: name,
             positions: vec![],
+            speeds_button: vec![],
+            speeds_axis: vec![],
             drivetrain_type: None,
         }
     }

@@ -1,5 +1,5 @@
 use crate::config::AppStyle;
-use eframe::egui::{Visuals};
+use eframe::egui::Visuals;
 
 pub struct Theme {
     pub visuals: Visuals,
@@ -32,25 +32,22 @@ impl Theme {
         //visuals.widgets.inactive.weak_bg_fill = cfg.accent_blue;
         //visuals.widgets.open.weak_bg_fill = cfg.accent_blue;
         //visuals.widgets.open.bg_fill = cfg.accent_blue;
-        
+
         // selected combobox entry while expanded
         //visuals.selection.bg_fill = cfg.accent_green;
 
         // combobox "click" color
         //visuals.widgets.active.weak_bg_fill = cfg.accent_yellow;
-        
 
         // slider fill color (when clicked)
         //visuals.widgets.active.bg_fill = cfg.accent_green;
-    
+
         // dropdown backdrops
         //visuals.window_fill = cfg.bg_light;
 
         // background
         //visuals.panel_fill = cfg.bg;
 
-        Self {
-            visuals
-        }
+        Self { visuals }
     }
 }

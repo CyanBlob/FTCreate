@@ -134,10 +134,16 @@ impl TemplateApp {
 
         new_code += "\n";
 
-        new_code += &format!(r#"@TeleOp(name="{} Teleop", group="Linear Opmode")"#, &self.file_name);
+        new_code += &format!(
+            r#"@TeleOp(name="{} Teleop", group="Linear Opmode")"#,
+            &self.file_name
+        );
         new_code += "\n";
-        new_code += &format!("public class {} extends LinearOpMode {{\n\
-                \n\tprivate ElapsedTime runtime = new ElapsedTime();\n\n", &self.file_name);
+        new_code += &format!(
+            "public class {} extends LinearOpMode {{\n\
+                \n\tprivate ElapsedTime runtime = new ElapsedTime();\n\n",
+            &self.file_name
+        );
 
         // global variables
         new_code += &self.drivetrain.generate_globals();
@@ -195,7 +201,6 @@ impl eframe::App for TemplateApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
             ui.heading("Generated code");
             egui::scroll_area::ScrollArea::horizontal().show(ui, |ui| {
@@ -250,7 +255,8 @@ impl eframe::App for TemplateApp {
         #[cfg(target_arch = "wasm32")]
         egui::TopBottomPanel::bottom("Upload").show(ctx, |ui| {
             ui.label("Code upload only works from desktop version of FTCreate: ");
-            ui.hyperlink("https://github.com/FRC3005/FTCreate/releases").on_hover_text("Download page");
+            ui.hyperlink("https://github.com/FRC3005/FTCreate/releases")
+                .on_hover_text("Download page");
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -287,7 +293,7 @@ impl eframe::App for TemplateApp {
                     ui.label("Teleop name: ");
                     ui.text_edit_singleline(&mut self.file_name);
                 });
-                
+
                 ui.add_space(10.0);
 
                 ui.heading("Drivetrain Configuration");
@@ -365,7 +371,11 @@ fn remove_leading_indentation(code: &str) -> String {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-async fn upload_code(code: String, upload_status_tx: &mpsc::UnboundedSender<UploadStatus>, file_name: String) {
+async fn upload_code(
+    code: String,
+    upload_status_tx: &mpsc::UnboundedSender<UploadStatus>,
+    file_name: String,
+) {
     let mut opt: ftc_http::Ftc = ftc_http::Ftc::default();
     opt.upload = true;
 
@@ -388,7 +398,13 @@ async fn upload_code(code: String, upload_status_tx: &mpsc::UnboundedSender<Uplo
 
             upload_status_tx.send(UploadStatus::UPLOADING);
             println!("Uploading files...");
-            match r.upload_files(vec![PathBuf::from(&file_path)], &format!("{}.java", &file_name)).await {
+            match r
+                .upload_files(
+                    vec![PathBuf::from(&file_path)],
+                    &format!("{}.java", &file_name),
+                )
+                .await
+            {
                 Ok(_) => {
                     upload_status_tx.send(UploadStatus::BUILDING);
                     match r.build().await {
