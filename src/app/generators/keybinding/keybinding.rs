@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
@@ -22,6 +23,39 @@ impl<T> Keybinding<T> {
     }
 }
 
+impl Eq for Keybinding<i32> {}
+
+impl Ord for Keybinding<i32> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.button {
+            None => Ordering::Less,
+            Some(button) => {
+                match other.button {
+                    None => Ordering::Greater,
+                    Some(other) =>button.partial_cmp(&other).unwrap(),
+                }
+            }
+        }
+    }
+}
+
+impl Ord for Keybinding<f32> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.button {
+            None => Ordering::Less,
+            Some(button) => {
+               match other.button {
+                   None => Ordering::Greater,
+                   Some(other) =>button.partial_cmp(&other).unwrap(),
+               }
+            }
+        }
+    }
+}
+
+impl Eq for Keybinding<f32> {}
+
+
 impl AxisKeybinding {
     #[allow(unused)]
     pub fn new(value: f32) -> Self {
@@ -35,6 +69,7 @@ impl AxisKeybinding {
 #[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Copy, EnumIter)]
 pub enum BooleanButton {
+    default = 0,
     a,
     b,
     x,
@@ -54,6 +89,7 @@ pub enum BooleanButton {
 #[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Copy, EnumIter)]
 pub enum Axis {
+    default,
     left_trigger,
     right_trigger,
     left_stick_x,

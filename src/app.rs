@@ -49,7 +49,7 @@ pub struct TemplateApp {
     tokio_runtime: Runtime,
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
 #[allow(non_camel_case_types)]
 enum UploadStatus {
     DISCONNECTED,

@@ -11,6 +11,7 @@ use crate::app::generators::{
 };
 
 use servo::*;
+use crate::app::generators::keybinding::keybinding::BooleanButton::default;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 pub struct RevServo {
@@ -35,14 +36,6 @@ impl generator::Generator for RevServo {
             &self.name, &self.name
         );
 
-        for i in 0..self.positions.len() {
-            code += &format!(
-                "\tprivate double {}_pos_{} = {};\n",
-                self.name,
-                i,
-                self.positions.iter().nth(i).unwrap().value
-            );
-        }
         code += &"\n";
         code
     }
@@ -59,19 +52,41 @@ impl generator::Generator for RevServo {
 
     fn generate_loop(&self) -> String {
         let mut code: String = "".into();
+
+        let mut _positions = self.positions.clone();
+
+        _positions.sort();
+
         // generate keybindings
-        for i in 0..self.positions.len() {
-            if self.positions.iter().nth(i).unwrap().button != None {
+        let mut count = 0;
+        let mut default_code: String = "".into();
+        for speed_button in _positions {
+            if let Some(button) = speed_button.button {
+                if button == default {
+                    default_code = format!("\t\t\telse {{\n\t\t\t\t{}.setPower({});\n\t\t\t}}\n\n", &self.name, &speed_button.value);
+                    continue;
+                }
+
+                code += "\t\t\t";
+
+                if count > 0 {
+                    code += "else "
+                }
+
                 code += &format!(
-                    "\t\t\tif (gamepad1.{:?}) {{\n",
-                    &self.positions.iter().nth(i).unwrap().button.unwrap()
+                    "if (gamepad1.{:?}) {{\n",
+                    &button
                 );
 
-                code += &format!("\t\t\t\t{}.setPower({}_pos_{});\n", self.name, self.name, i);
+                code += &format!("\t\t\t\t{}.setPower({});\n", self.name, &speed_button.value);
 
                 code += "\t\t\t}\n\n";
+
+                count += 1;
             }
         }
+        code += &default_code;
+
         code
     }
 

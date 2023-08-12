@@ -13,6 +13,7 @@ use crate::app::generators::{
 };
 
 use motor::*;
+use crate::app::generators::keybinding::keybinding::BooleanButton::default;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 pub struct DcMotor {
@@ -140,20 +141,44 @@ impl generator::Generator for DcMotor {
 
                 code += &format!("\t\t\t// {} keybindings\n", &self.name);
 
-                for speed_button in &self.speeds_button {
+                let mut buttons = self.speeds_button.clone();
+
+                buttons.sort();
+
+                let mut count = 0;
+                let mut default_code: String = "".into();
+                for speed_button in buttons {
                     if let Some(button) = speed_button.button {
-                        code += &format!("\t\t\tif (gamepad1.{:?}) {{\n", button);
+
+                        if button == default {
+                            default_code = format!("\t\t\telse {{\n\t\t\t\t {}.setPower({});\n\t\t\t}}\n\n", &self.name, &speed_button.value);
+                            continue;
+                        }
+
+                        code += "\t\t\t";
+
+                        if count > 0 {
+                            code += "else ";
+                        }
+
+                        code += &format!("if (gamepad1.{:?}) {{\n", button);
 
                         code += &format!(
                             "\t\t\t\t{}.setPower({:?});\n",
                             &self.name, &speed_button.value);
 
                         code += &format!("\t\t\t}}\n\n");
+
+                        count += 1;
                     }
                 }
 
+                code += &default_code;
+
                 for speed_axis in &self.speeds_axis {
+
                     if let Some(axis) = speed_axis.axis {
+
                         match speed_axis.reversed {
                             true => {
                                 code += &format!(
@@ -168,6 +193,7 @@ impl generator::Generator for DcMotor {
                         }
                     }
                 }
+
                 code
             }.to_owned(),
         };
