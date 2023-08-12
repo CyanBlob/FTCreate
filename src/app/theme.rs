@@ -6,7 +6,7 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn new(cfg: &AppStyle) -> Self {
+    pub fn new(_cfg: &AppStyle) -> Self {
         let visuals = Visuals::dark();
 
         //visuals.widgets.noninteractive.bg_fill = cfg.background; visuals.widgets.noninteractive.fg_stroke.color = cfg.text_color;

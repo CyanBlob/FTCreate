@@ -12,7 +12,7 @@ fn main() {
         "FTCreate",
         native_options,
         Box::new(|cc| Box::new(ftcreate::TemplateApp::new(cc))),
-    );
+    ).unwrap();
 }
 
 // when compiling to web using trunk.

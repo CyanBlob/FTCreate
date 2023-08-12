@@ -71,7 +71,7 @@ unsafe impl Sync for UploadStatus {}
 impl Default for TemplateApp {
     fn default() -> Self {
         let (tx, rx) = unbounded_channel::<UploadStatus>();
-        tx.send(UploadStatus::DISCONNECTED).unwrap();
+        let _ = tx.send(UploadStatus::DISCONNECTED);
         Self {
             label: "FTCreate".to_owned(),
             file_name: "FTCreate".to_owned(),
@@ -382,13 +382,13 @@ async fn upload_code(
     let mut opt: ftc_http::Ftc = ftc_http::Ftc::default();
     opt.upload = true;
 
-    upload_status_tx.send(UploadStatus::CONNECTING).unwrap();
+    let _ = upload_status_tx.send(UploadStatus::CONNECTING);
 
     let mut conf = ftc_http::AppConfig::default();
 
     match ftc_http::RobotController::new(&mut conf).await {
         Ok(r) => {
-            upload_status_tx.send(UploadStatus::CONNECTED).unwrap();
+            let _ = upload_status_tx.send(UploadStatus::CONNECTED);
 
             // create a tmp directory to write files into
             let dir = tempfile::tempdir().unwrap();
@@ -399,7 +399,7 @@ async fn upload_code(
 
             write!(tmpfile, "{}", code).unwrap();
 
-            upload_status_tx.send(UploadStatus::UPLOADING).unwrap();
+            let _ = upload_status_tx.send(UploadStatus::UPLOADING);
             println!("Uploading files...");
             match r
                 .upload_files(
@@ -409,26 +409,26 @@ async fn upload_code(
                 .await
             {
                 Ok(_) => {
-                    upload_status_tx.send(UploadStatus::BUILDING).unwrap();
+                    let _ = upload_status_tx.send(UploadStatus::BUILDING);
                     match r.build().await {
                         Ok(_) => {
-                            upload_status_tx.send(UploadStatus::BUILT).unwrap();
+                            let _ = upload_status_tx.send(UploadStatus::BUILT);
                             println!("Build succeeded");
                         }
                         Err(_) => {
-                            upload_status_tx.send(UploadStatus::BUILD_FAILED).unwrap();
+                            let _ = upload_status_tx.send(UploadStatus::BUILD_FAILED);
                             println!("Build failed");
                         }
                     }
                 }
                 Err(_) => {
-                    upload_status_tx.send(UploadStatus::UPLOAD_FAILED).unwrap();
+                    let _ = upload_status_tx.send(UploadStatus::UPLOAD_FAILED);
                     println!("Failed to upload files to robot");
                 }
             }
         }
         Err(_) => {
-            upload_status_tx.send(UploadStatus::CONNECT_FAILED).unwrap();
+            let _ = upload_status_tx.send(UploadStatus::CONNECT_FAILED);
         }
     };
 }
