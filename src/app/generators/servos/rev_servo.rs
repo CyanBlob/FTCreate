@@ -32,8 +32,8 @@ impl generator::Generator for RevServo {
 
     fn generate_globals(&self) -> String {
         let mut code = format!(
-            "\t// {} globals\n\tprivate CRServo {} = null;\n\n",
-            &self.name, &self.name
+            "\tprivate CRServo {} = null;\n\n",
+            &self.name
         );
 
         code += &"\n";
@@ -60,6 +60,7 @@ impl generator::Generator for RevServo {
         // generate keybindings
         let mut count = 0;
         let mut default_code: String = "".into();
+
         for speed_button in _positions {
             if let Some(button) = speed_button.button {
                 if button == default {

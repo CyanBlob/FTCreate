@@ -44,8 +44,8 @@ impl generator::Generator for DcMotor {
 
     fn generate_globals(&self) -> String {
         let mut code = format!(
-            "\t// {} globals\n\tprivate DcMotorEx {} = null;\n\n",
-            &self.name, &self.name
+            "\tprivate DcMotorEx {} = null;\n\n",
+            &self.name
         );
 
         if self.mode == MotorMode::RUN_TO_POSITION {
