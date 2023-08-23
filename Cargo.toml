@@ -9,18 +9,20 @@ edition = "2021"
 default = ["syntect"]
 
 [dependencies]
+egui_dnd = "0.5.0"
+ordered-float = "3.9.1"
 serde_json = "1.0.89"
 
-egui = {version = "0.21.0"}
-egui_extras = {version = "0.21.0", features = ["image"]}
+egui = { version = "0.22.0" }
+egui_extras = { version = "0.22.0", features = ["image"] }
 
-tokio = {version = "1.28.2", features = ["sync"]}
+tokio = { version = "1.28.2", features = ["sync"] }
 
-eframe = { version = "0.21.0", default-features = false, features = [
-    "accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
+eframe = { version = "0.22.0", default-features = false, features = [
+    "accesskit", # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts", # Embed the default egui fonts.
-    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
-    "persistence",   # Enable restoring app state when restarting the app.
+    "glow", # Use the glow rendering backend. Alternative: "wgpu".
+    "persistence", # Enable restoring app state when restarting the app.
 ] }
 
 image = { version = "0.24", default-features = false, features = ["png"] }
@@ -41,7 +43,7 @@ tempfile = "3.5.0"
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tracing-subscriber = "0.3"
-ftc_http = {git = "https://github.com/CyanBlob/ftc_http", branch = "async"}
+ftc_http = { git = "https://github.com/CyanBlob/ftc_http", branch = "async" }
 #ftc_http = { path = "../ftc_http" }
 
 # web:

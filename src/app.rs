@@ -1,23 +1,25 @@
-use crate::app::generators::generator::Generator;
-
-pub mod generators;
-
-use generators::motors::dc_motor::DcMotor;
-use generators::servos::rev_servo::RevServo;
-
-use self::generators::generator::SubsystemGenerator;
-use self::generators::subsystem::subsystem::Subsystem;
-use self::theme::Theme;
-
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use tokio::sync::{mpsc, mpsc::unbounded_channel};
 
 #[cfg(not(target_arch = "wasm32"))]
 use tokio;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::runtime::Runtime;
+use tokio::sync::{mpsc, mpsc::unbounded_channel};
+
+use generators::motors::dc_motor::DcMotor;
+use generators::servos::rev_servo::RevServo;
+
+use crate::app::auton::Auton;
+use crate::app::generators::generator::Generator;
+
+use self::generators::generator::SubsystemGenerator;
+use self::generators::subsystem::subsystem::Subsystem;
+use self::theme::Theme;
+
+pub mod generators;
+pub mod auton;
 
 pub mod syntax_highlighting;
 
@@ -47,6 +49,8 @@ pub struct TemplateApp {
     #[serde(skip)]
     #[cfg(not(target_arch = "wasm32"))]
     tokio_runtime: Runtime,
+    #[serde(skip)]
+    auton: Auton,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
@@ -84,6 +88,7 @@ impl Default for TemplateApp {
             upload_status: "Disconnected".into(),
             #[cfg(not(target_arch = "wasm32"))]
             tokio_runtime: Runtime::new().unwrap(),
+            auton: auton::Auton::new(),
         }
     }
 }
@@ -198,7 +203,7 @@ impl TemplateApp {
 
 impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
             ui.heading("Generated code");
             egui::scroll_area::ScrollArea::horizontal().show(ui, |ui| {
@@ -281,6 +286,9 @@ impl eframe::App for TemplateApp {
                         ));
                         self.selected_subsystem = self.subsystems.len();
                     }
+                    if ui.button("Auton (WIP)").clicked() {
+                        self.selected_subsystem = self.subsystems.len() + 1;
+                    }
                 });
             });
 
@@ -295,7 +303,7 @@ impl eframe::App for TemplateApp {
                 ui.add_space(10.0);
 
                 ui.heading("Drivetrain Configuration");
-            } else {
+            } else if self.selected_subsystem <= self.subsystems.len() {
                 ui.heading(format!(
                     "{} Configuration",
                     self.subsystems
@@ -326,14 +334,18 @@ impl eframe::App for TemplateApp {
                     self.selected_subsystem -= 1;
                 }
             }
+
             if self.selected_subsystem == 0 {
                 self.drivetrain.render_options(ui, 0);
-            } else {
+            } else if self.selected_subsystem <= self.subsystems.len() { // render subsystem
                 self.subsystems
                     .iter_mut()
                     .nth(self.selected_subsystem - 1)
                     .unwrap()
                     .render_options(ui, 0);
+            } else { // render auton UI
+                ui.add_space(20.0);
+                self.auton.render(ui);
             }
 
             self.generate_code();

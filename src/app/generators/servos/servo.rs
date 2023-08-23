@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-
 use strum_macros::EnumIter;
 
 use crate::app::generators::generator::Generator;
@@ -18,7 +17,8 @@ pub enum ServoMode {
 
 pub trait ServoGenerator: Servo + Generator {
     fn new(name: String) -> Self
-    where
-        Self: Sized;
+        where
+            Self: Sized;
 }
+
 pub trait Servo {}

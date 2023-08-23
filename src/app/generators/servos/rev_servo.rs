@@ -1,17 +1,16 @@
 use serde::{Deserialize, Serialize};
-
 use strum::IntoEnumIterator;
 
-use super::super::generator;
-use super::servo;
+use servo::*;
 
 use crate::app::generators::{
     generator::GeneratorSerialize,
     keybinding::keybinding::{BooleanButton, Keybinding},
 };
-
-use servo::*;
 use crate::app::generators::keybinding::keybinding::BooleanButton::default;
+
+use super::servo;
+use super::super::generator;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 pub struct RevServo {

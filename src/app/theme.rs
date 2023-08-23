@@ -1,5 +1,6 @@
-use crate::config::AppStyle;
 use eframe::egui::Visuals;
+
+use crate::config::AppStyle;
 
 pub struct Theme {
     pub visuals: Visuals,

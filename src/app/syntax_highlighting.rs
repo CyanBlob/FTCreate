@@ -71,7 +71,7 @@ enum SyntectTheme {
 #[cfg(feature = "syntect")]
 impl SyntectTheme {
     #[allow(unused)]
-    fn all() -> impl ExactSizeIterator<Item = Self> {
+    fn all() -> impl ExactSizeIterator<Item=Self> {
         [
             Self::Base16EightiesDark,
             Self::Base16MochaDark,
@@ -81,8 +81,8 @@ impl SyntectTheme {
             Self::SolarizedDark,
             Self::SolarizedLight,
         ]
-        .iter()
-        .copied()
+            .iter()
+            .copied()
     }
 
     #[allow(unused)]

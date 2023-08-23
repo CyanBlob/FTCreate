@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
@@ -32,7 +33,7 @@ impl Ord for Keybinding<i32> {
             Some(button) => {
                 match other.button {
                     None => Ordering::Greater,
-                    Some(other) =>button.partial_cmp(&other).unwrap(),
+                    Some(other) => button.partial_cmp(&other).unwrap(),
                 }
             }
         }
@@ -44,10 +45,10 @@ impl Ord for Keybinding<f32> {
         match self.button {
             None => Ordering::Less,
             Some(button) => {
-               match other.button {
-                   None => Ordering::Greater,
-                   Some(other) =>button.partial_cmp(&other).unwrap(),
-               }
+                match other.button {
+                    None => Ordering::Greater,
+                    Some(other) => button.partial_cmp(&other).unwrap(),
+                }
             }
         }
     }

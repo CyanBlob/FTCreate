@@ -1,13 +1,14 @@
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
+
 use crate::app::generators::{
     generator::{self, SubsystemGenerator},
     motors::motor::MotorGenerator,
     servos::servo::ServoGenerator,
 };
-use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
 
 #[derive(
-    Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, EnumIter, PartialOrd, Copy,
+Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, EnumIter, PartialOrd, Copy,
 )]
 pub enum DrivetrainType {
     Mecanum,
@@ -29,9 +30,9 @@ pub struct Subsystem<
 }
 
 impl<
-        T: MotorGenerator + PartialEq + PartialOrd + Clone,
-        U: ServoGenerator + PartialEq + PartialOrd + Clone,
-    > generator::Generator for Subsystem<T, U>
+    T: MotorGenerator + PartialEq + PartialOrd + Clone,
+    U: ServoGenerator + PartialEq + PartialOrd + Clone,
+> generator::Generator for Subsystem<T, U>
 {
     fn generate_includes(&self) -> String {
         let mut code: String = "".to_owned();
@@ -259,9 +260,9 @@ impl<
 }
 
 impl<
-        T: MotorGenerator + PartialEq + PartialOrd + Clone,
-        U: ServoGenerator + PartialEq + PartialOrd + Clone,
-    > SubsystemGenerator for Subsystem<T, U>
+    T: MotorGenerator + PartialEq + PartialOrd + Clone,
+    U: ServoGenerator + PartialEq + PartialOrd + Clone,
+> SubsystemGenerator for Subsystem<T, U>
 {
     fn get_name(&self) -> String {
         self.name.to_string()
@@ -269,9 +270,9 @@ impl<
 }
 
 impl<
-        T: MotorGenerator + PartialEq + PartialOrd + Clone,
-        U: ServoGenerator + PartialEq + PartialOrd + Clone,
-    > Subsystem<T, U>
+    T: MotorGenerator + PartialEq + PartialOrd + Clone,
+    U: ServoGenerator + PartialEq + PartialOrd + Clone,
+> Subsystem<T, U>
 {
     pub fn new(name: String, is_drivetrain: bool) -> Self {
         Subsystem {

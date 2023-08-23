@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-
 use strum_macros::EnumIter;
 
 use crate::app::generators::{generator::Generator, subsystem::subsystem::DrivetrainType};
@@ -34,9 +33,10 @@ pub enum ArcadePosition {
 
 pub trait MotorGenerator: Motor + Generator {
     fn new(name: String) -> Self
-    where
-        Self: Sized;
+        where
+            Self: Sized;
     fn set_drivetrain_type(&mut self, drivetrain_type: Option<DrivetrainType>);
     fn set_mecanum_position(&mut self, position: MecanumPosition);
 }
+
 pub trait Motor {}
