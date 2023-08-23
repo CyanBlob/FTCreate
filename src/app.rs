@@ -11,6 +11,7 @@ use self::theme::Theme;
 
 use std::fs::File;
 use std::io::Write;
+use std::ops::Deref;
 use std::path::PathBuf;
 use tokio::sync::{mpsc, mpsc::unbounded_channel};
 
@@ -43,13 +44,14 @@ pub struct TemplateApp {
     #[serde(skip)]
     upload_status_rx: mpsc::UnboundedReceiver<UploadStatus>,
     upload_status: String,
+    last_upload_update: UploadStatus,
 
     #[serde(skip)]
     #[cfg(not(target_arch = "wasm32"))]
     tokio_runtime: Runtime,
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Debug)]
+#[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 #[allow(non_camel_case_types)]
 enum UploadStatus {
     DISCONNECTED,
@@ -72,6 +74,7 @@ impl Default for TemplateApp {
     fn default() -> Self {
         let (tx, rx) = unbounded_channel::<UploadStatus>();
         let _ = tx.send(UploadStatus::DISCONNECTED);
+
         Self {
             label: "FTCreate".to_owned(),
             file_name: "FTCreate".to_owned(),
@@ -82,6 +85,7 @@ impl Default for TemplateApp {
             upload_status_tx: tx,
             upload_status_rx: rx,
             upload_status: "Disconnected".into(),
+            last_upload_update: UploadStatus::DISCONNECTED,
             #[cfg(not(target_arch = "wasm32"))]
             tokio_runtime: Runtime::new().unwrap(),
         }
@@ -199,6 +203,17 @@ impl TemplateApp {
 impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+
+        // periodically update the UI without user interaction so build status can update
+        match self.last_upload_update {
+            UploadStatus::DISCONNECTED | UploadStatus::UPLOAD_FAILED | UploadStatus::CONNECT_FAILED | UploadStatus::BUILD_FAILED => {
+                ctx.request_repaint_after(std::time::Duration::from_secs(60));
+            }
+            _ => {
+                ctx.request_repaint_after(std::time::Duration::from_secs(1));
+            }
+        }
+
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
             ui.heading("Generated code");
             egui::scroll_area::ScrollArea::horizontal().show(ui, |ui| {
@@ -217,6 +232,8 @@ impl eframe::App for TemplateApp {
             {
                 match &self.upload_status_rx.try_recv() {
                     Ok(status) => {
+                        self.last_upload_update = status.clone();
+
                         self.upload_status = match status {
                             UploadStatus::DISCONNECTED => "Not connected to robot".into(),
                             UploadStatus::CONNECTING => "Connecting to robot".into(),
