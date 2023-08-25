@@ -50,6 +50,20 @@ impl AutonCommand {
             ui.label("Distance");
         });
     }
+
+    pub fn gen_code(&self) -> String {
+        let code = match &self {
+            DriveForward { speed, distance } => format!("drive_forward({}, {});", speed, distance),
+            DriveBackward { speed, distance } => format!("drive_backward({}, {});", speed, distance),
+            StrafeLeft { speed, distance } => format!("strafe_left({}, {});", speed, distance),
+            StrafeRight { speed, distance } => format!("strafe_right({}, {});", speed, distance),
+            RotateLeft { speed, distance } => format!("rotate_left({}, {});", speed, distance),
+            RotateRight { speed, distance } => format!("rotate_right({}, {});", speed, distance),
+            Wait { time } => format!("delay({});", time.0),
+        };
+
+        format!("{}\n", code).to_string()
+    }
 }
 
 impl Auton {
@@ -82,5 +96,15 @@ impl Auton {
                 item.render(ui);
             });
         });
+    }
+
+    pub fn generate_code(&self) -> String {
+        let mut code: String = "".to_string();
+
+        self.commands.iter().for_each(|c| {
+            code += &c.gen_code();
+        });
+
+        code.to_string()
     }
 }

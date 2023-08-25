@@ -113,7 +113,7 @@ impl TemplateApp {
         Default::default()
     }
 
-    pub fn generate_code(&mut self) {
+    pub fn generate_code(&mut self) -> String {
         let mut new_code = String::new();
 
         // standard includes
@@ -197,7 +197,7 @@ impl TemplateApp {
                 \t\t}\n\
             \t}\n}";
 
-        self.code = new_code.to_string();
+        new_code.to_string()
     }
 }
 
@@ -337,18 +337,19 @@ impl eframe::App for TemplateApp {
 
             if self.selected_subsystem == 0 {
                 self.drivetrain.render_options(ui, 0);
+                self.code = self.generate_code();
             } else if self.selected_subsystem <= self.subsystems.len() { // render subsystem
                 self.subsystems
                     .iter_mut()
                     .nth(self.selected_subsystem - 1)
                     .unwrap()
                     .render_options(ui, 0);
+                self.code = self.generate_code();
             } else { // render auton UI
                 ui.add_space(20.0);
                 self.auton.render(ui);
+                self.code = self.auton.generate_code();
             }
-
-            self.generate_code();
         });
     }
 
