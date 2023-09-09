@@ -7,7 +7,7 @@ pub struct Pixel {
     pub position: Vec2,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum PixelColor {
     White,
     Green,

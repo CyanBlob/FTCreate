@@ -108,7 +108,7 @@ impl Default for TemplateApp {
             color_images: [
                 RetainedImage::from_image_bytes("hex", include_bytes!("../assets/icon-256.png")).unwrap(),
                 RetainedImage::from_image_bytes("hex", include_bytes!("../assets/icon-256.png")).unwrap(),
-                RetainedImage::from_image_bytes("hex", include_bytes!("../assets/icon-256.png")).unwrap(),
+                RetainedImage::from_image_bytes("hex", include_bytes!("../assets/hex_purple.png")).unwrap(),
                 RetainedImage::from_image_bytes("hex", include_bytes!("../assets/icon-256.png")).unwrap(),
                 RetainedImage::from_image_bytes("hex", include_bytes!("../assets/hex.png")).unwrap(),
             ],
