@@ -9,7 +9,6 @@ edition = "2021"
 default = ["syntect"]
 
 [dependencies]
-hexx = { version = "0.10", features = ["serde"] } # for Center Stage mosaics scoring
 serde_json = "1.0.89"
 
 egui = {version = "0.21.0"}

@@ -1,9 +1,7 @@
-use hexx::*;
 use crate::app::scoring::pixel::PixelColor;
 use super::pixel::Pixel;
 
 const MAX_HEIGHT: usize = 11;
-const SPACING: usize = 1;
 
 pub struct Mosaic {
     pub even_row_count: usize,
@@ -11,32 +9,16 @@ pub struct Mosaic {
     pub max_height: usize,
     pub pixels: [[Pixel; MAX_HEIGHT]; 7],
     pub auton_pixels: [[Pixel; MAX_HEIGHT]; 7],
-    pub layout: HexLayout,
 }
 
 impl Mosaic {
     pub fn default() -> Self {
-        let layout = HexLayout {
-            hex_size: Vec2::new(1.0, 1.0),
-            orientation: HexOrientation::Flat,
-            ..Default::default()
-        };
-        // Get the hex coordinate at the world position `world_pos`.
-        let world_pos = Vec2::new(SPACING as f32, SPACING as f32);
-
-        //let point = layout.world_pos_to_hex(world_pos);
-
-        // Get the world position of `point`
-        //let point = hex(123, 45);
-        //let world_pos = layout.hex_to_world_pos(point);
-
         let mut mosaic = Mosaic {
             even_row_count: 6,
             odd_row_count: 7,
             max_height: MAX_HEIGHT,
             pixels: [[Pixel::default(); MAX_HEIGHT]; 7],
             auton_pixels: [[Pixel::default(); MAX_HEIGHT]; 7],
-            layout: layout,
         };
 
         mosaic.clear();
@@ -56,43 +38,7 @@ impl Mosaic {
         self.auton_raw_pixel_count()
     }
 
-    /*pub fn pixel_is_valid(&self, x: usize, y: usize, iterations: i8) -> bool {
-        let iterations = iterations - 1;
-
-
-        match self.pixels[x][y].color {
-            PixelColor::Blank => {
-                false
-            }
-            PixelColor::White => {
-                false
-            }
-            _ => {
-                if iterations < 0 {
-                    return true;
-                }
-                // 3 pixels in a line is always invalid
-                if x > 0 && self.pixel_is_valid(x - 1, y, 0) && self.pixel_is_valid(x + 1, y, 0) {
-                    false
-                } else if y > 0 && self.pixel_is_valid(x, y - 1, 0) && self.pixel_is_valid(x, y + 1, 0) {
-                    false
-                } else if y > 0 && self.pixel_is_valid(x + 1, y - 1, 0) && self.pixel_is_valid(x + 1, y + 1, 0) {
-                    false
-                } else {
-                    let mut valid_pixels = 1;
-                    for pixel in self.get_pixel_neighbors(x, y) {
-                        if self.pixel_is_valid(pixel.0, pixel.1, iterations) {
-                            println!("Valid pixel: {}, {}", pixel.0, pixel.1);
-                            valid_pixels = valid_pixels + 1;
-                        }
-                    }
-                    valid_pixels == 3
-                }
-            }
-        }
-    }*/
-
-    pub fn pixel_is_valid(&self, x: usize, y: usize, color: Option<PixelColor>) -> bool {
+    pub fn pixel_is_valid(&self, x: usize, y: usize, color: Option<PixelColor>, used_colors: &Vec<PixelColor>) -> bool {
         match self.pixels[x][y].color {
             PixelColor::Blank => {
                 false
@@ -106,7 +52,31 @@ impl Mosaic {
                         true
                     }
                     Some(c2) => {
-                        c1 == c2
+                        let mut c1_count = 0;
+                        let mut other_count = 0;
+
+                        //let _ = used_colors.iter().map(|c| );
+                        for c in used_colors {
+                            if c == &c1 {
+                                c1_count += 1;
+                            } else {
+                                other_count += 1;
+                            }
+                        }
+
+                        if used_colors.len() == 0 {
+                            return true;
+                        }
+
+                        if c1 == c2 && other_count == 0 {
+                            return true;
+                        }
+
+                        if (!used_colors.contains(&c2)) && c1_count == 0 {
+                            return true;
+                        }
+
+                        false
                     }
                 }
             }
@@ -116,36 +86,57 @@ impl Mosaic {
     pub fn get_pixel_neighbors(&self, x: usize, y: usize) -> Vec<(usize, usize)> {
         let mut tmp_pixels = vec![];
 
+        // left
         if x > 0 {
             tmp_pixels.push((x - 1, y));
         }
-        if y > 0 {
-            tmp_pixels.push((x, y - 1));
-        }
-        if y < self.max_height {
-            tmp_pixels.push((x, y + 1));
+
+        // right
+        if x < self.odd_row_count - 1 {
+            tmp_pixels.push((x + 1, y));
         }
 
-        match x % 2 {
+        match y % 2 {
             0 => {
-                if x < self.even_row_count {
-                    tmp_pixels.push((x + 1, y));
+                if x < self.odd_row_count - 1 {
+                    // bottom right
                     if y > 0 {
                         tmp_pixels.push((x + 1, y - 1));
                     }
-                    if y < self.max_height {
+                    // top right
+                    if y < self.max_height - 1 {
                         tmp_pixels.push((x + 1, y + 1));
+                    }
+                    // bottom left
+                    if y > 0 {
+                        tmp_pixels.push((x, y - 1));
+                    }
+
+                    // top left
+                    if y < self.max_height - 1 {
+                        tmp_pixels.push((x, y + 1));
                     }
                 }
             }
             1 => {
                 if x < self.odd_row_count {
-                    tmp_pixels.push((x + 1, y));
+                    // bottom right
                     if y > 0 {
-                        tmp_pixels.push((x + 1, y - 1));
+                        tmp_pixels.push((x, y - 1));
                     }
-                    if y < self.max_height {
-                        tmp_pixels.push((x + 1, y + 1));
+                    // top right
+                    if y < self.max_height - 1 {
+                        tmp_pixels.push((x, y + 1));
+                    }
+                    if x > 0 {
+                        // top left
+                        if y < self.max_height - 1 {
+                            tmp_pixels.push((x - 1, y + 1));
+                        }
+                        // bottom left
+                        if y > 0 {
+                            tmp_pixels.push((x - 1, y - 1));
+                        }
                     }
                 }
             }
@@ -153,8 +144,11 @@ impl Mosaic {
         }
 
         let mut pixels: Vec<(usize, usize)> = vec![];
+        let mut colors = vec![];
 
         for (x, y) in tmp_pixels {
+            colors.push(self.pixels[x][y].color);
+
             match self.pixels[x][y].color {
                 PixelColor::Blank => {}
                 PixelColor::White => {}
@@ -162,14 +156,15 @@ impl Mosaic {
             }
         }
 
-
         pixels
     }
 
     pub fn get_mosaic_score(&self) -> u32 {
         let mut score = 0;
 
-        let mut row_width = 0;
+        let mut row_width;
+
+        let mut used_pixels: Vec<(usize, usize)> = vec![];
 
         for y in (0..self.max_height).step_by(1) {
             if y % 2 == 0 {
@@ -179,16 +174,38 @@ impl Mosaic {
             }
 
             for x in 0..row_width {
-                match self.pixel_is_valid(x, y, None) {
+                match self.pixel_is_valid(x, y, None, &vec![]) {
                     true => {
-                        let mut valid_pixels = 1;
-                        for (nx, ny) in self.get_pixel_neighbors(x, y) {
-                            if self.pixel_is_valid(nx, ny, Some(self.pixels[x][y].color)) {
+                        let mut valid_pixels = 0;
+                        let mut neighbors = self.get_pixel_neighbors(x, y);
+
+                        neighbors.push((x, y));
+
+                        let mut used_colors = vec![];
+
+                        for i in 0..neighbors.len() {
+                            let (nx, ny) = neighbors[i];
+                            if used_pixels.contains(&(nx, ny)) {
+                                valid_pixels = 10;
+                            }
+
+                            let neighbor_count = self.get_pixel_neighbors(nx, ny).len();
+
+                            if neighbor_count > 2 {
+                                valid_pixels = 10;
+                            }
+
+                            if neighbor_count == 2 && self.pixel_is_valid(nx, ny, Some(self.pixels[x][y].color), &used_colors) {
+                                used_colors.push(self.pixels[nx][ny].color);
                                 valid_pixels = valid_pixels + 1;
                             }
                         }
 
                         if valid_pixels == 3 {
+                            for i in 0..3 {
+                                used_pixels.push(neighbors.clone().to_owned().iter().nth(i).unwrap().clone().to_owned());
+                            }
+
                             score += 10;
                         }
                     }
@@ -262,12 +279,12 @@ impl Mosaic {
     pub fn clear_auton(&mut self) {
         for y in (0..self.max_height).step_by(2) {
             for x in 0..self.even_row_count {
-                self.auton_pixels[x][y] = Pixel::new(Vec2::new((x * SPACING) as f32, (y * SPACING) as f32));
+                self.auton_pixels[x][y] = Pixel::default();
             }
         }
         for y in (1..self.max_height).step_by(2) {
             for x in 0..self.odd_row_count {
-                self.auton_pixels[x][y] = Pixel::new(Vec2::new((x * SPACING) as f32 + SPACING as f32 / 2.0, (y * SPACING) as f32));
+                self.auton_pixels[x][y] = Pixel::default();
             }
         }
     }
@@ -275,12 +292,12 @@ impl Mosaic {
     pub fn clear_teleop(&mut self) {
         for y in (0..self.max_height).step_by(2) {
             for x in 0..self.even_row_count {
-                self.pixels[x][y] = Pixel::new(Vec2::new((x * SPACING) as f32, (y * SPACING) as f32));
+                self.pixels[x][y] = Pixel::default();
             }
         }
         for y in (1..self.max_height).step_by(2) {
             for x in 0..self.odd_row_count {
-                self.pixels[x][y] = Pixel::new(Vec2::new((x * SPACING) as f32 + SPACING as f32 / 2.0, (y * SPACING) as f32));
+                self.pixels[x][y] = Pixel::default();
             }
         }
     }
