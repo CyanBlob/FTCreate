@@ -456,9 +456,9 @@ impl eframe::App for TemplateApp {
             self.generate_code();
         });
 
-        egui::Window::new("Mosaic scoring").show(ctx, |ui| {
+        /*egui::Window::new("Mosaic scoring").show(ctx, |ui| {
             self.add_mosaic_window(ctx, ui);
-        });
+        });*/
     }
     /// Called by the framework to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {

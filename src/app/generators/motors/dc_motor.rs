@@ -187,7 +187,7 @@ impl generator::Generator for DcMotor {
                             }
                             false => {
                                 code += &format!(
-                                    "\t\t\t{}.setPowerTest(gamepad1.{:?});\n\n",
+                                    "\t\t\t{}.setPower(gamepad1.{:?});\n\n",
                                     &self.name, &axis)
                             }
                         }
