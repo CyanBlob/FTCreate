@@ -10,15 +10,19 @@ use self::generators::subsystem::subsystem::Subsystem;
 use self::theme::Theme;
 
 use std::fs::File;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::ops::Deref;
 use std::path::PathBuf;
+use mlua::Lua;
 use tokio::sync::{mpsc, mpsc::unbounded_channel};
 
 #[cfg(not(target_arch = "wasm32"))]
 use tokio;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::runtime::Runtime;
+use crate::app::generators::control::Control;
+use crate::app::generators::lua_generator::LuaGenerator;
+use crate::app::generators::slider::Slider;
 
 pub mod syntax_highlighting;
 
@@ -27,7 +31,7 @@ pub mod theme;
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
-pub struct TemplateApp {
+pub struct TemplateApp<'lua> {
     // Example stuff:
     label: String,
     file_name: String,
@@ -49,6 +53,11 @@ pub struct TemplateApp {
     #[serde(skip)]
     #[cfg(not(target_arch = "wasm32"))]
     tokio_runtime: Runtime,
+
+    #[serde(skip)]
+    lua: Lua,
+    #[serde(skip)]
+    lua_generator: LuaGenerator<'lua>,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
@@ -70,7 +79,7 @@ unsafe impl Send for UploadStatus {}
 
 unsafe impl Sync for UploadStatus {}
 
-impl Default for TemplateApp {
+impl Default for TemplateApp<'_> {
     fn default() -> Self {
         let (tx, rx) = unbounded_channel::<UploadStatus>();
         let _ = tx.send(UploadStatus::DISCONNECTED);
@@ -88,11 +97,13 @@ impl Default for TemplateApp {
             last_upload_update: UploadStatus::DISCONNECTED,
             #[cfg(not(target_arch = "wasm32"))]
             tokio_runtime: Runtime::new().unwrap(),
+            lua: Lua::new(),
+            lua_generator: LuaGenerator::new("lua_modules/print_slider.lua"),
         }
     }
 }
 
-impl TemplateApp {
+impl TemplateApp<'_> {
     // Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
@@ -113,6 +124,23 @@ impl TemplateApp {
     }
 
     pub fn generate_code(&mut self) {
+
+
+        /*let map_table = self.lua.create_table().unwrap();
+        map_table.set(1, "one").unwrap();
+        map_table.set("two", 2).unwrap();
+
+        self.lua.globals().set("map_table", map_table).unwrap();
+
+        self.lua.load("for k,v in pairs(map_table) do print(k,v) end").exec().unwrap();
+
+        let mut script = File::open("lua_modules/print.lua").unwrap();
+        let mut script_contents: String = "".to_string();
+
+        script.read_to_string(&mut script_contents);
+
+        self.lua.load(script_contents).exec();*/
+
         let mut new_code = String::new();
 
         // standard includes
@@ -200,7 +228,7 @@ impl TemplateApp {
     }
 }
 
-impl eframe::App for TemplateApp {
+impl eframe::App for TemplateApp<'_> {
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 
@@ -215,6 +243,9 @@ impl eframe::App for TemplateApp {
         }
 
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
+
+            self.lua_generator.render(ui);
+
             ui.heading("Generated code");
             egui::scroll_area::ScrollArea::horizontal().show(ui, |ui| {
                 egui::scroll_area::ScrollArea::vertical()

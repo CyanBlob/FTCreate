@@ -2,13 +2,13 @@ use std::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub struct Keybinding<T> {
     pub value: T,
     pub button: Option<BooleanButton>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub struct AxisKeybinding {
     pub reversed: bool,
     pub axis: Option<Axis>,

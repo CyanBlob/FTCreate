@@ -39,7 +39,7 @@ impl Theme {
         // combobox "click" color
         //visuals.widgets.active.weak_bg_fill = cfg.accent_yellow;
 
-        // slider fill color (when clicked)
+        // Slider fill color (when clicked)
         //visuals.widgets.active.bg_fill = cfg.accent_green;
 
         // dropdown backdrops
