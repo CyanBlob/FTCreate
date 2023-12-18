@@ -12,8 +12,10 @@ use self::theme::Theme;
 
 use std::fs::File;
 use std::io::Write;
+use std::ops::Deref;
 use std::path::PathBuf;
 use tokio::sync::{mpsc, mpsc::unbounded_channel};
+use image::{DynamicImage, GenericImageView};
 use eframe::egui;
 use egui_extras::RetainedImage;
 
@@ -27,9 +29,12 @@ pub mod syntax_highlighting;
 
 pub mod theme;
 
+/// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
+    // Example stuff:
+    label: String,
     file_name: String,
 
     drivetrain: Subsystem<DcMotor, RevServo>,
@@ -86,6 +91,7 @@ impl Default for TemplateApp {
         let _ = tx.send(UploadStatus::DISCONNECTED);
 
         Self {
+            label: "FTCreate".to_owned(),
             file_name: "FTCreate".to_owned(),
             drivetrain: Subsystem::new("Drivetrain".to_owned(), true),
             subsystems: vec![],
@@ -100,11 +106,11 @@ impl Default for TemplateApp {
             mosaic: Mosaic::default(),
             texture: None,
             color_images: [
-                RetainedImage::from_image_bytes("hex", include_bytes!("../assets/hex_white.png")).unwrap(),
-                RetainedImage::from_image_bytes("hex", include_bytes!("../assets/hex_green.png")).unwrap(),
+                RetainedImage::from_image_bytes("hex", include_bytes!("../assets/icon-256.png")).unwrap(),
+                RetainedImage::from_image_bytes("hex", include_bytes!("../assets/icon-256.png")).unwrap(),
                 RetainedImage::from_image_bytes("hex", include_bytes!("../assets/hex_purple.png")).unwrap(),
-                RetainedImage::from_image_bytes("hex", include_bytes!("../assets/hex_yellow.png")).unwrap(),
-                RetainedImage::from_image_bytes("hex", include_bytes!("../assets/hex_blank.png")).unwrap(),
+                RetainedImage::from_image_bytes("hex", include_bytes!("../assets/icon-256.png")).unwrap(),
+                RetainedImage::from_image_bytes("hex", include_bytes!("../assets/hex.png")).unwrap(),
             ],
             mosaic_auton: false,
             mosaic_spike: 0,
@@ -235,8 +241,6 @@ impl TemplateApp {
             ui.checkbox(&mut self.mosaic_has_prop, "Has prop");
         });
 
-        ui.add_space(10.0);
-
         ui.horizontal(|ui| {
             if ui.button("Clear auton").clicked() {
                 self.mosaic.clear_auton();
@@ -249,8 +253,6 @@ impl TemplateApp {
             }
         });
 
-        ui.add_space(10.0);
-
         ui.horizontal(|ui| {
             if ui.button("Copy auton to teleop").clicked() {
                 self.mosaic.copy_auton_to_teleop();
@@ -260,12 +262,7 @@ impl TemplateApp {
             }
         });
 
-        ui.add_space(10.0);
-
         ui.label(format!("Current score: {} (Auton: {}, teleop: {})", self.mosaic.get_score(), self.mosaic.get_auton_score(), self.mosaic.get_teleop_score()));
-
-        ui.add_space(10.0);
-
         ui.vertical(|ui| {
             for y in (0..self.mosaic.max_height).rev() {
                 ui.horizontal(|ui| {
@@ -284,12 +281,12 @@ impl TemplateApp {
                     for x in 0..pixel_count {
                         match self.mosaic_auton {
                             true => {
-                                if ui.add(egui::ImageButton::new(self.color_images[self.mosaic.auton_pixels[x][y].color as usize].texture_id(ctx), [64.0, 57.0]).frame(false)).clicked() {
+                                if ui.add(egui::ImageButton::new(self.color_images[self.mosaic.auton_pixels[x][y].color as usize].texture_id(ctx), [64.0, 64.0]).frame(false)).clicked() {
                                     self.mosaic.auton_pixels[x][y].inc_color();
                                 }
                             }
                             false => {
-                                if ui.add(egui::ImageButton::new(self.color_images[self.mosaic.pixels[x][y].color as usize].texture_id(ctx), [64.0, 57.0]).frame(false)).clicked() {
+                                if ui.add(egui::ImageButton::new(self.color_images[self.mosaic.pixels[x][y].color as usize].texture_id(ctx), [64.0, 64.0]).frame(false)).clicked() {
                                     self.mosaic.pixels[x][y].inc_color();
                                 }
                             }
@@ -303,7 +300,7 @@ impl TemplateApp {
 
 impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // periodically update the UI without user interaction so build status can update
         match self.last_upload_update {
             UploadStatus::DISCONNECTED | UploadStatus::UPLOAD_FAILED | UploadStatus::CONNECT_FAILED | UploadStatus::BUILD_FAILED => {
