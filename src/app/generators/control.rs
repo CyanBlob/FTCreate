@@ -1,45 +1,44 @@
 use egui::Ui;
 use mlua::prelude::LuaUserData;
-use mlua::{UserData, UserDataFields, UserDataMethods};
+use mlua::{UserData, UserDataFields};
 use crate::app::generators::slider::Slider;
 
 pub trait SizedUserData: LuaUserData + Sized {}
 
-pub trait Control {
+pub trait UiElement {
     fn render(&mut self, ui: &mut Ui);
-
-    //fn obj(&mut self) -> impl UserData;
 }
 
 #[derive(Clone)]
-pub enum ControlTest
+#[allow(unused)]
+pub enum Control
 {
     Slider(Slider),
-    B
+    B,
 }
 
-impl UserData for ControlTest {
+impl UserData for Control {
     fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
-        fields.add_field_method_get("value", |_, this|
-
-            match this {
-                ControlTest::Slider(s) => {
-                    return Ok(s.value);
+        fields.add_field_method_get("value", |_, this| {
+            return match this {
+                Control::Slider(s) => {
+                    Ok(s.value)
                 }
-                ControlTest::B => {
-                    return Ok(0.0);
+                Control::B => {
+                    Ok(0.0)
                 }
-            });
+            };
+        });
     }
 }
 
-impl ControlTest
+impl Control
 {
     pub fn render(&mut self, ui: &mut Ui)
     {
         match self {
-            ControlTest::Slider(s) => {s.render(ui);}
-            ControlTest::B => {println!("Render not implemented for this variant")}
+            Control::Slider(s) => { s.render(ui); }
+            Control::B => { println!("Render not implemented for this variant") }
         }
     }
 }

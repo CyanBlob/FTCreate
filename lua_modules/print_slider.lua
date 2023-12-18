@@ -1,4 +1,3 @@
-print("TEST")
-print("TEST3")
 print(myobject.value)
-print("TEST2")
+
+return "This was from lua!"
