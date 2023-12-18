@@ -56,10 +56,7 @@ impl Mosaic {
         self.auton_raw_pixel_count()
     }
 
-    /*pub fn pixel_is_valid(&self, x: usize, y: usize, iterations: i8) -> bool {
-        let iterations = iterations - 1;
-
-
+    pub fn pixel_is_valid(&self, x: usize, y: usize) -> bool {
         match self.pixels[x][y].color {
             PixelColor::Blank => {
                 false
@@ -67,130 +64,32 @@ impl Mosaic {
             PixelColor::White => {
                 false
             }
-            _ => {
-                if iterations < 0 {
-                    return true;
-                }
-                // 3 pixels in a line is always invalid
-                if x > 0 && self.pixel_is_valid(x - 1, y, 0) && self.pixel_is_valid(x + 1, y, 0) {
-                    false
-                } else if y > 0 && self.pixel_is_valid(x, y - 1, 0) && self.pixel_is_valid(x, y + 1, 0) {
-                    false
-                } else if y > 0 && self.pixel_is_valid(x + 1, y - 1, 0) && self.pixel_is_valid(x + 1, y + 1, 0) {
-                    false
-                } else {
-                    let mut valid_pixels = 1;
-                    for pixel in self.get_pixel_neighbors(x, y) {
-                        if self.pixel_is_valid(pixel.0, pixel.1, iterations) {
-                            println!("Valid pixel: {}, {}", pixel.0, pixel.1);
-                            valid_pixels = valid_pixels + 1;
-                        }
-                    }
-                    valid_pixels == 3
-                }
-            }
-        }
-    }*/
-
-    pub fn pixel_is_valid(&self, x: usize, y: usize, color: Option<PixelColor>) -> bool {
-        match self.pixels[x][y].color {
-            PixelColor::Blank => {
-                false
-            }
-            PixelColor::White => {
-                false
-            }
-            c1 => {
-                match color {
-                    None => {
-                        true
-                    }
-                    Some(c2) => {
-                        c1 == c2
-                    }
-                }
-            }
+            _ => { true }
         }
     }
 
-    pub fn get_pixel_neighbors(&self, x: usize, y: usize) -> Vec<(usize, usize)> {
-        let mut tmp_pixels = vec![];
-
-        if x > 0 {
-            tmp_pixels.push((x - 1, y));
-        }
-        if y > 0 {
-            tmp_pixels.push((x, y - 1));
-        }
-        if y < self.max_height {
-            tmp_pixels.push((x, y + 1));
-        }
-
-        match x % 2 {
-            0 => {
-                if x < self.even_row_count {
-                    tmp_pixels.push((x + 1, y));
-                    if y > 0 {
-                        tmp_pixels.push((x + 1, y - 1));
-                    }
-                    if y < self.max_height {
-                        tmp_pixels.push((x + 1, y + 1));
-                    }
-                }
-            }
-            1 => {
-                if x < self.odd_row_count {
-                    tmp_pixels.push((x + 1, y));
-                    if y > 0 {
-                        tmp_pixels.push((x + 1, y - 1));
-                    }
-                    if y < self.max_height {
-                        tmp_pixels.push((x + 1, y + 1));
-                    }
-                }
-            }
-            _ => {}
-        }
-
-        let mut pixels: Vec<(usize, usize)> = vec![];
-
-        for (x, y) in tmp_pixels {
-            match self.pixels[x][y].color {
-                PixelColor::Blank => {}
-                PixelColor::White => {}
-                _ => { pixels.push((x, y)) }
-            }
-        }
-
-
-        pixels
+    pub fn get_pixel_neighbors(&self, x: usize, y: usize) -> Vec<Pixel> {
+        vec![]
     }
 
     pub fn get_mosaic_score(&self) -> u32 {
         let mut score = 0;
 
-        let mut row_width = 0;
-
-        for y in (0..self.max_height).step_by(1) {
-            if y % 2 == 0 {
-                row_width = self.even_row_count;
-            } else {
-                row_width = self.odd_row_count;
-            }
-
-            for x in 0..row_width {
-                match self.pixel_is_valid(x, y, None) {
+        for y in (0..self.max_height).step_by(2) {
+            for x in 0..self.even_row_count {
+                match self.pixel_is_valid(x, y) {
                     true => {
-                        let mut valid_pixels = 1;
-                        for (nx, ny) in self.get_pixel_neighbors(x, y) {
-                            if self.pixel_is_valid(nx, ny, Some(self.pixels[x][y].color)) {
-                                valid_pixels = valid_pixels + 1;
-                            }
-                        }
-
-                        if valid_pixels == 3 {
-                            score += 10;
-                        }
+                        score += 10;
+                    }
+                    false => {}
+                }
+            }
+        }
+        for y in (1..self.max_height).step_by(2) {
+            for x in 0..self.odd_row_count {
+                match self.pixel_is_valid(x, y) {
+                    true => {
+                        score += 10;
                     }
                     false => {}
                 }
