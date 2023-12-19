@@ -19,7 +19,7 @@ use tokio::sync::{mpsc, mpsc::unbounded_channel};
 use tokio;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::runtime::Runtime;
-use crate::app::generators::lua_generator::LuaGenerator;
+use crate::app::generators::lua_generator::{ControlHandler, LuaGenerator};
 
 pub mod syntax_highlighting;
 
@@ -54,7 +54,7 @@ pub struct TemplateApp {
     #[serde(skip)]
     lua: Lua,
     #[serde(skip)]
-    lua_generator: LuaGenerator,
+    control_handler: ControlHandler,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
@@ -95,7 +95,7 @@ impl Default for TemplateApp {
             #[cfg(not(target_arch = "wasm32"))]
             tokio_runtime: Runtime::new().unwrap(),
             lua: Lua::new(),
-            lua_generator: LuaGenerator::new("lua_modules/print_slider.lua"),
+            control_handler: ControlHandler {generators: vec![LuaGenerator::new("lua_modules/print_slider.lua")]},
         }
     }
 }
@@ -241,7 +241,7 @@ impl eframe::App for TemplateApp {
 
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
 
-            self.lua_generator.render(ui);
+            self.control_handler.render(ui);
 
             ui.heading("Generated code");
             egui::scroll_area::ScrollArea::horizontal().show(ui, |ui| {

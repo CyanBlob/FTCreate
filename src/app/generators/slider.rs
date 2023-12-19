@@ -3,7 +3,7 @@ use egui::Ui;
 use crate::app::generators::control::UiElement;
 use crate::app::generators::keybinding::keybinding::Keybinding;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Slider {
     pub min: f32,
     pub max: f32,

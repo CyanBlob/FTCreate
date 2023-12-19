@@ -9,11 +9,11 @@ pub trait UiElement {
     fn render(&mut self, ui: &mut Ui);
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[allow(unused)]
 pub enum Control
 {
-    Slider(Slider),
+    SliderType(Slider),
     B,
 }
 
@@ -21,7 +21,7 @@ impl UserData for Control {
     fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
         fields.add_field_method_get("value", |_, this| {
             return match this {
-                Control::Slider(s) => {
+                Control::SliderType(s) => {
                     Ok(s.value)
                 }
                 Control::B => {
@@ -37,7 +37,7 @@ impl Control
     pub fn render(&mut self, ui: &mut Ui)
     {
         match self {
-            Control::Slider(s) => { s.render(ui); }
+            Control::SliderType(s) => { s.render(ui); }
             Control::B => { println!("Render not implemented for this variant") }
         }
     }
