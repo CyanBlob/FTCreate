@@ -1,28 +1,23 @@
 controlsChanged = true
 
-function print1()
-    print("From 1")
-    print(myobject.value)
-    --print(test_add_slider)
-    --test_add_slider(0, 5, 2, "Test slider")
-end
-
-function print2(message)
-    print("From 2")
-    print(myobject.value)
-    print(message)
-end
 function pack(...)
     return {n = select("#", ...), ...}
 end
 
 function get_controls()
     controls = {}
+
     if LuaSlider ~= nil then
+
+        if LuaSlider.value == 20 then
+            print("Adding new slider")
+            controls["AnotherSlider"] = pack("Slider", 0, 1, .5, .1, 2, "Another Slider")
+        end
+
         print("Val: ", LuaSlider.value)
-        controls["LuaSlider"] = pack("Slider", 0, 30, LuaSlider.value, 1, 2)
+        controls["LuaSlider"] = pack("Slider", 0, 30, LuaSlider.value, 1, 2, "Main Slider")
     else
-        controls["LuaSlider"] = pack("Slider", 0, 30, 0, 1, 2)
+        controls["LuaSlider"] = pack("Slider", 0, 30, 0, 1, 2, "Main Slider")
     end
 
     controlsChanged = false
@@ -30,7 +25,16 @@ function get_controls()
     return controls
 end
 
+function tick()
+    if LuaSlider ~= nil then
+        print("Val: ", LuaSlider.value)
+    end
+end
+
 function controls_changed()
+    if LuaSlider ~= nil then
+        return LuaSlider.value == 20
+    end
     return controlsChanged
 end
 
@@ -41,6 +45,7 @@ function generate_loop_one_time_setup()
 end
 
 function generate_loop()
+    return "// lua loop code!"
 end
 
 function generate_globals()

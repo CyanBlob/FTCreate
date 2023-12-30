@@ -20,15 +20,27 @@ pub struct LuaGenerator {
 
 impl ControlHandler {
     pub fn render(&mut self, ui: &mut Ui) {
+        self.add_controls();
+
+        self.render_controls(ui);
+
+        self.tick_lua();
+    }
+
+    pub fn add_controls(&mut self)
+    {
         for generator in &mut self.generators {
             let mut new_controls = vec![];
 
-            let p1: Function<'_> = generator.lua.globals().get("print1").unwrap();
-            let p2: Function<'_> = generator.lua.globals().get("print2").unwrap();
             let get_controls: Function<'_> = generator.lua.globals().get("get_controls").unwrap();
             let controls_changed: Function<'_> = generator.lua.globals().get("controls_changed").unwrap();
 
-            //TODO: temp
+            let changed = controls_changed.call::<_, bool>(()).unwrap();
+
+            if changed == false {
+                break;
+            }
+
             generator.controls.clear();
 
             let table = get_controls.call::<_, Table>(()).unwrap();
@@ -41,12 +53,13 @@ impl ControlHandler {
                         match s.as_str() {
                             "Slider" => {
                                 let control = Control::SliderType(Slider {
+                                    name: k.clone(),
                                     min: v.raw_get::<i32, f32>(2).unwrap(),
                                     max: v.raw_get::<i32, f32>(3).unwrap(),
                                     value: v.raw_get::<i32, f32>(4).unwrap(),
-                                    step_by: v.raw_get::<i32, f32>(5).unwrap(),
-                                    deicimals: 0,
-                                    label: "".to_string(),
+                                    step_by: v.raw_get::<i32, f64>(5).unwrap(),
+                                    deicimals: v.raw_get::<i32, usize>(6).unwrap(),
+                                    label: v.raw_get::<i32, String>(7).unwrap(),
                                     keybinding: None,
                                 });
                                 println!("Adding global with name: {}: {:?}", k, &control);
@@ -64,24 +77,25 @@ impl ControlHandler {
 
 
             generator.controls.append(&mut new_controls);
+        }
+    }
 
+    pub fn tick_lua(&self)
+    {
+        for generator in &self.generators
+        {
+            for control in &generator.controls {
+                generator.lua.globals().set(control.get_name(), control.clone()).unwrap();
+            }
+            let tick: Function<'_> = generator.lua.globals().get("tick").unwrap();
+            tick.call::<_, ()>(()).unwrap();
+        }
+    }
+
+    pub fn render_controls(&mut self, ui: &mut Ui)
+    {
+        for generator in &mut self.generators {
             for control in &mut generator.controls {
-                generator.lua.globals().set("myobject", control.clone()).unwrap();
-                // TODO: Store the chunk for performance
-                //generator.lua.load(&generator.script_data).exec().expect("Failed to run lua");
-                //let str = self.lua.load(&self.script_data).eval::<String>().unwrap();
-
-
-                let changed = controls_changed.call::<_, bool>(()).unwrap();
-
-                /*if changed == false {
-                    continue;
-                }*/
-
-                //let test_string = "Hey there!".to_string();
-                //p1.call::<_, ()>(()).unwrap();
-                //p2.call::<_, ()>(test_string).unwrap();
-
                 control.render(ui);
             }
         }
@@ -90,7 +104,7 @@ impl ControlHandler {
 
 impl UserData for LuaGenerator {
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
-        methods.add_method_mut("add_slider", |_, this, (min, max, value): (f32, f32, f32)| {
+        /*methods.add_method_mut("add_slider", |_, this, (min, max, value): (f32, f32, f32)| {
             println!("Adding slider");
             this.controls.push(Control::SliderType(Slider {
                 min: min,
@@ -102,7 +116,7 @@ impl UserData for LuaGenerator {
                 keybinding: None,
             }));
             Ok(())
-        });
+        });*/
     }
 }
 
@@ -113,20 +127,9 @@ impl LuaGenerator {
             script: script_path.to_string(),
             script_data: "".into(),
             loaded: false,
-            controls: vec![
-                Control::SliderType(Slider {
-                    min: 0.0,
-                    max: 100.0,
-                    value: 10.0,
-                    step_by: 0.5,
-                    deicimals: 1,
-                    label: "Test enum".to_string(),
-                    keybinding: None,
-                })
-            ],
+            controls: vec![],
         };
         generator.render();
-        //generator.lua.load(&generator.script_data).exec().expect("Failed to run lua");
         generator
     }
 
@@ -146,35 +149,6 @@ impl LuaGenerator {
         self.script_data = script_data.to_string();
 
         self.lua.load(&self.script_data).exec().unwrap();
-
-        self.lua.scope(|scope| {
-            // We create a 'sketchy' Lua callback that holds a mutable reference to the variable
-            // `rust_val`. Outside of a `Lua::scope` call, this would not be allowed
-            // because it could be unsafe.
-
-            self.lua.globals().set(
-                "test_add_slider",
-                scope.create_function_mut(|_, (min, max, value, label): (f32, f32, f32, String)| {
-                    println!("Called");
-                    self.controls.push(
-                        Control::SliderType(Slider {
-                            min,
-                            max,
-                            value,
-                            step_by: 1.0,
-                            deicimals: 0,
-                            label,
-                            keybinding: None,
-                        })
-                    );
-                    Ok(())
-                })?,
-            )?;
-
-            //self.lua.load("test_add_slider(0, 25, 15, 'hmmm')").exec()
-
-            Ok(())
-        }).unwrap();
     }
     pub fn render(&mut self)
     {

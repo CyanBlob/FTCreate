@@ -41,4 +41,12 @@ impl Control
             Control::B => { println!("Render not implemented for this variant") }
         }
     }
+
+    pub fn get_name(&self) -> String
+    {
+        return match self {
+            Control::SliderType(s) => { s.name.clone() }
+            Control::B => { "".to_string() }
+        }
+    }
 }
