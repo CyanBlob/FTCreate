@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::Read;
+use std::sync::WaitTimeoutResult;
 use egui::Ui;
 use mlua::{Function, Lua, Table, UserData, UserDataMethods};
 use crate::app::generators::control::{Control};
@@ -38,7 +39,7 @@ impl ControlHandler {
             let changed = controls_changed.call::<_, bool>(()).unwrap();
 
             if changed == false {
-                break;
+                continue;
             }
 
             generator.controls.clear();
@@ -99,6 +100,55 @@ impl ControlHandler {
                 control.render(ui);
             }
         }
+    }
+
+    pub fn generate_includes(&mut self) -> String {
+        let mut code: String = "".to_string();
+
+        for generator in &self.generators {
+            let tick: Function<'_> = generator.lua.globals().get("generate_includes").unwrap();
+            code += &*tick.call::<_, String>(()).unwrap();
+        }
+        code.to_string()
+    }
+
+    pub fn generate_init(&mut self) -> String {
+        let mut code: String = "".to_string();
+
+        for generator in &self.generators {
+            let tick: Function<'_> = generator.lua.globals().get("generate_init").unwrap();
+            code += &*tick.call::<_, String>(()).unwrap();
+        }
+        code.to_string()
+    }
+
+    pub fn generate_globals(&mut self) -> String {
+        let mut code: String = "".to_string();
+
+        for generator in &self.generators {
+            let tick: Function<'_> = generator.lua.globals().get("generate_globals").unwrap();
+            code += &*tick.call::<_, String>(()).unwrap();
+        }
+        code.to_string()
+    }
+    pub fn generate_loop_one_time_setup(&mut self) -> String {
+        let mut code: String = "".to_string();
+
+        for generator in &self.generators {
+            let tick: Function<'_> = generator.lua.globals().get("generate_loop_one_time_setup").unwrap();
+            code += &*tick.call::<_, String>(()).unwrap();
+        }
+        code.to_string()
+    }
+
+    pub fn generate_loop(&mut self) -> String {
+        let mut code: String = "".to_string();
+
+        for generator in &self.generators {
+            let tick: Function<'_> = generator.lua.globals().get("generate_loop").unwrap();
+            code += &*tick.call::<_, String>(()).unwrap();
+        }
+        code.to_string()
     }
 }
 

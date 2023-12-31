@@ -1,3 +1,4 @@
+use std::fs;
 use crate::app::generators::generator::Generator;
 
 pub mod generators;
@@ -55,6 +56,7 @@ pub struct TemplateApp {
     lua: Lua,
     #[serde(skip)]
     control_handler: ControlHandler,
+    lua_scripts: Vec::<String>,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
@@ -95,7 +97,8 @@ impl Default for TemplateApp {
             #[cfg(not(target_arch = "wasm32"))]
             tokio_runtime: Runtime::new().unwrap(),
             lua: Lua::new(),
-            control_handler: ControlHandler {generators: vec![LuaGenerator::new("lua_modules/print_slider.lua")]},
+            control_handler: ControlHandler { generators: vec![] },
+            lua_scripts: vec![],
         }
     }
 }
@@ -114,30 +117,38 @@ impl TemplateApp {
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
         if let Some(storage) = cc.storage {
-            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+            let mut obj: TemplateApp = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+
+            let paths = fs::read_dir("./lua_modules").unwrap();
+
+            for path in paths {
+                obj.lua_scripts.push(path.unwrap().path().to_str().unwrap().to_string());
+            }
+
+            for script in &obj.lua_scripts {
+                println!("Loading: {:?}", script);
+                obj.control_handler.generators.push(LuaGenerator::new(script));
+            }
+            return obj;
         }
 
-        Default::default()
+        let mut obj: TemplateApp = Default::default();
+
+        let paths = fs::read_dir("./lua_modules").unwrap();
+
+        for path in paths {
+            obj.lua_scripts.push(path.unwrap().path().to_str().unwrap().to_string());
+        }
+
+        for script in &obj.lua_scripts {
+            println!("Loading: {:?}", script);
+            obj.control_handler.generators.push(LuaGenerator::new(script));
+        }
+
+        obj
     }
 
     pub fn generate_code(&mut self) {
-
-
-        /*let map_table = self.lua.create_table().unwrap();
-        map_table.set(1, "one").unwrap();
-        map_table.set("two", 2).unwrap();
-
-        self.lua.globals().set("map_table", map_table).unwrap();
-
-        self.lua.load("for k,v in pairs(map_table) do print(k,v) end").exec().unwrap();
-
-        let mut script = File::open("lua_modules/print.lua").unwrap();
-        let mut script_contents: String = "".to_string();
-
-        script.read_to_string(&mut script_contents);
-
-        self.lua.load(script_contents).exec();*/
-
         let mut new_code = String::new();
 
         // standard includes
@@ -153,6 +164,8 @@ impl TemplateApp {
         self.subsystems.iter().for_each(|subsystem| {
             includes += &subsystem.generate_includes().to_string();
         });
+
+        new_code += &*self.control_handler.generate_includes();
 
         // remove duplicate includes
         let mut includes_collection = includes.lines().collect::<Vec<&str>>();
@@ -184,6 +197,8 @@ impl TemplateApp {
             new_code += &subsystem.generate_globals();
         });
 
+        new_code += &*self.control_handler.generate_globals();
+
         new_code += "\t@Override\n\
         \tpublic void runOpMode() {\n\n\
             \t\ttelemetry.addData(\"Status\", \"Initialized\");\n\
@@ -196,6 +211,8 @@ impl TemplateApp {
         self.subsystems.iter().for_each(|subsystem| {
             new_code += &subsystem.generate_init();
         });
+
+        new_code += &*self.control_handler.generate_init();
 
         new_code += "\t\twaitForStart();\n\n\
             \t\t// Reset the timer (stopwatch) because we only care about time since the game\n\
@@ -210,12 +227,16 @@ impl TemplateApp {
             new_code += &subsystem.generate_loop_one_time_setup();
         });
 
+        new_code += &*self.control_handler.generate_loop_one_time_setup();
+
         // loop
         new_code += &self.drivetrain.generate_loop();
 
         self.subsystems.iter().for_each(|subsystem| {
             new_code += &subsystem.generate_loop();
         });
+
+        new_code += &*self.control_handler.generate_loop();
 
         new_code += "\t\t\ttelemetry.update();\n\
                 \t\t}\n\
@@ -240,7 +261,6 @@ impl eframe::App for TemplateApp {
         }
 
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
-
             self.control_handler.render(ui);
 
             ui.heading("Generated code");

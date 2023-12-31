@@ -7,17 +7,17 @@ end
 function get_controls()
     controls = {}
 
-    if LuaSlider ~= nil then
+    if LuaSlider2 ~= nil then
 
-        if LuaSlider.value == 20 then
+        if LuaSlider2.value == 20 then
             print("Adding new slider")
-            controls["AnotherSlider"] = pack("Slider", 0, 1, .5, .1, 2, "Another Slider")
+            controls["AnotherSlider2"] = pack("Slider", 0, 1, .5, .1, 2, "Another Slider 2")
         end
 
-        print("Val: ", LuaSlider.value)
-        controls["LuaSlider"] = pack("Slider", 0, 30, LuaSlider.value, 1, 2, "Main Slider")
+        print("Val: 2 ", LuaSlider2.value)
+        controls["LuaSlider2"] = pack("Slider", 0, 30, LuaSlider2.value, 1, 2, "Main Slider 2")
     else
-        controls["LuaSlider"] = pack("Slider", 0, 30, 0, 1, 2, "Main Slider")
+        controls["LuaSlider2"] = pack("Slider", 0, 30, 0, 1, 2, "Main Slider 2")
     end
 
     controlsChanged = false
@@ -26,14 +26,15 @@ function get_controls()
 end
 
 function tick()
-    if LuaSlider ~= nil then
-        print("Val: ", LuaSlider.value)
+    if LuaSlider2 ~= nil then
+        print("Val 2: ", LuaSlider2.value)
     end
 end
 
 function controls_changed()
-    if LuaSlider ~= nil then
-        return LuaSlider.value == 20
+    if LuaSlider2 ~= nil then
+        print("Test")
+        return LuaSlider2.value == 20
     end
     return controlsChanged
 end
@@ -55,8 +56,8 @@ function generate_loop_one_time_setup()
 end
 
 function generate_loop()
-    if LuaSlider ~= nil then
-        return "// lua loop code!! Val: " .. tostring(LuaSlider.value) .. "\n"
+    if LuaSlider2 ~= nil then
+        return "// lua loop code!! Val: " .. tostring(LuaSlider2.value) .. "\n"
     end
     return "// lua loop code!!\n"
 end
