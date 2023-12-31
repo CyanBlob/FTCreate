@@ -2,6 +2,7 @@ use std::ops::RangeInclusive;
 use egui::Ui;
 use crate::app::generators::control::UiElement;
 use crate::app::generators::keybinding::keybinding::Keybinding;
+use crate::app::generators::motors::motor::MotorMode;
 
 #[derive(Clone, Debug)]
 pub struct Slider {
@@ -22,6 +23,14 @@ pub struct TextInput {
     pub label: String,
 }
 
+#[derive(Clone, Debug)]
+pub struct ComboBoxInput {
+    pub name: String,
+    pub value: String,
+    pub label: String,
+    pub entries: Vec::<String>
+}
+
 impl UiElement for Slider {
     fn render(&mut self, ui: &mut Ui) {
         ui.add(
@@ -37,5 +46,18 @@ impl UiElement for Slider {
 impl UiElement for TextInput {
     fn render(&mut self, ui: &mut Ui) {
         ui.text_edit_singleline(&mut self.value);
+    }
+}
+
+impl UiElement for ComboBoxInput {
+    fn render(&mut self, ui: &mut Ui) {
+        egui::ComboBox::from_label(&self.label)
+            .selected_text(format!("{:?}", &mut self.value))
+            .width(170.0)
+            .show_ui(ui, |ui| {
+                for entry in &self.entries {
+                    ui.selectable_value(&mut self.value, entry.to_string(), format!("{:?}", entry));
+                }
+            });
     }
 }

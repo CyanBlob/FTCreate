@@ -1,7 +1,7 @@
 use egui::Ui;
 use mlua::prelude::LuaUserData;
 use mlua::{UserData, UserDataFields};
-use crate::app::generators::ui_elements::{Slider, TextInput};
+use crate::app::generators::ui_elements::{ComboBoxInput, Slider, TextInput};
 
 pub trait SizedUserData: LuaUserData + Sized {}
 
@@ -15,8 +15,8 @@ pub enum Control
 {
     SliderType(Slider),
     TextInputType(TextInput),
-    EnumType,
-    B,
+    ComboBoxType(ComboBoxInput),
+    Label(String),
 }
 
 impl UserData for Control {
@@ -26,13 +26,13 @@ impl UserData for Control {
                 Control::SliderType(s) => {
                     Ok(s.value)
                 }
-                Control::B => {
+                Control::Label(l) => {
                     Ok(0.0)
                 }
                 Control::TextInputType(t) => {
                     Ok(0.0)
                 }
-                Control::EnumType => {
+                Control::ComboBoxType(c) => {
                     Ok(0.0)
                 }
             };
@@ -43,14 +43,14 @@ impl UserData for Control {
                 Control::SliderType(s) => {
                     Ok("".to_string())
                 }
-                Control::B => {
-                    Ok("".to_string())
+                Control::Label(l) => {
+                    Ok(l.to_string())
                 }
                 Control::TextInputType(t) => {
                     Ok(t.value.to_string())
                 }
-                Control::EnumType => {
-                    Ok("".to_string())
+                Control::ComboBoxType(c) => {
+                    Ok(c.value.to_string())
                 }
             };
         });
@@ -63,9 +63,12 @@ impl Control
     {
         match self {
             Control::SliderType(s) => { s.render(ui); }
-            Control::B => { println!("Render not implemented for this variant") }
             Control::TextInputType(t) => { t.render(ui); }
-            Control::EnumType => {}
+            Control::ComboBoxType(c) => {c.render(ui)}
+            Control::Label(l) => {
+                ui.separator();
+                ui.label(l.to_string());
+            }
         }
     }
 
@@ -73,9 +76,9 @@ impl Control
     {
         return match self {
             Control::SliderType(s) => { s.name.to_string() }
-            Control::B => { "".to_string() }
+            Control::Label(l) => { l.to_string() }
             Control::TextInputType(t) => { t.name.to_string() }
-            Control::EnumType => { "".to_string() }
+            Control::ComboBoxType(c) => { c.name.to_string() }
         };
     }
 }

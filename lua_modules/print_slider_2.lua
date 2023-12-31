@@ -7,13 +7,18 @@ end
 function get_controls()
     controls = {}
 
+    controls[1] = pack("Label", "LabelTest")
+
     if LuaSlider2 ~= nil then
-        controls["LuaSlider2"] = pack("Slider", 0, 30, LuaSlider2.value, 1, 2, "Main Slider 2")
+        controls[2] = pack("Slider", "MainSlider2", "Main Slider 2", 0, 30, LuaSlider2.value, 1, 2)
     else
-        controls["LuaSlider2"] = pack("Slider", 0, 30, 0, 1, 2, "Main Slider 2")
+        controls[2] = pack("Slider", "MainSlider2", "Main Slider 2", 0, 30, 0, 1, 2)
     end
 
-    controls["PS2_Name"] = pack("TextInput", "PrintSlider2_Name", "PrintSlider2_Name")
+    controls[3] = pack("Label", "OtherControls")
+    controls[4] = pack("TextInput", "PS2_Name", "PrintSlider2_Name", "PrintSlider2_Name")
+
+    controls[5] = pack("ComboBox", "ComboTest", "Test combo", "One", "Two", "Three")
 
     controlsChanged = false
 
@@ -48,8 +53,15 @@ function generate_loop_one_time_setup()
 end
 
 function generate_loop()
+    string = ""
     if LuaSlider2 ~= nil then
-        return "// lua loop code!! Val: " .. tostring(LuaSlider2.value) .. "\n"
+        string = string .. "// lua loop code!! Val: " .. tostring(LuaSlider2.value) .. "\n"
     end
-    return "// lua loop code!!\n"
+    if PS2_Name ~= nil then
+        string = string .. "// lua loop code!! Val: " .. tostring(PS2_Name.text) .. "\n"
+    end
+    if ComboTest ~= nil then
+        string = string .. "// lua loop code!! Val: " .. tostring(ComboTest.text) .. "\n"
+    end
+    return string
 end

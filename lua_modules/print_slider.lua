@@ -7,18 +7,18 @@ end
 function get_controls()
     controls = {}
 
-    if LuaSlider ~= nil then
+    --if LuaSlider ~= nil then
 
-        if LuaSlider.value == 20 then
-            print("Adding new slider")
-            controls["AnotherSlider"] = pack("Slider", 0, 1, .5, .1, 2, "Another Slider")
-        end
+        --if LuaSlider.value == 20 then
+            --print("Adding new slider")
+            --controls["AnotherSlider"] = pack("Slider", "Another Slider", 0, 1, .5, .1, 2)
+        --end
 
-        print("Val: ", LuaSlider.value)
-        controls["LuaSlider"] = pack("Slider", 0, 30, LuaSlider.value, 1, 2, "Main Slider")
-    else
-        controls["LuaSlider"] = pack("Slider", 0, 30, 0, 1, 2, "Main Slider")
-    end
+        --print("Val: ", LuaSlider.value)
+        --controls["LuaSlider"] = pack("Slider", "Main Slider", 0, 30, LuaSlider.value, 1, 2)
+    --else
+        --controls["LuaSlider"] = pack("Slider", "Main Slider", 0, 30, 0, 1, 2)
+    --end
 
     controlsChanged = false
 

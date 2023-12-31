@@ -5,7 +5,7 @@ use egui::Ui;
 use mlua::{Function, Lua, Table, UserData, UserDataMethods};
 use crate::app::generators::control::{Control};
 use crate::app::generators::control::Control::SliderType;
-use crate::app::generators::ui_elements::{Slider, TextInput};
+use crate::app::generators::ui_elements::{ComboBoxInput, Slider, TextInput};
 
 pub struct ControlHandler {
     pub(crate) generators: Vec<LuaGenerator>,
@@ -54,13 +54,13 @@ impl ControlHandler {
                         match s.as_str() {
                             "Slider" => {
                                 let control = Control::SliderType(Slider {
-                                    name: k.clone(),
-                                    min: v.raw_get::<i32, f32>(2).unwrap(),
-                                    max: v.raw_get::<i32, f32>(3).unwrap(),
-                                    value: v.raw_get::<i32, f32>(4).unwrap(),
-                                    step_by: v.raw_get::<i32, f64>(5).unwrap(),
-                                    deicimals: v.raw_get::<i32, usize>(6).unwrap(),
-                                    label: v.raw_get::<i32, String>(7).unwrap(),
+                                    name: v.raw_get::<i32, String>(2).unwrap(),
+                                    label: v.raw_get::<i32, String>(3).unwrap(),
+                                    min: v.raw_get::<i32, f32>(4).unwrap(),
+                                    max: v.raw_get::<i32, f32>(5).unwrap(),
+                                    value: v.raw_get::<i32, f32>(6).unwrap(),
+                                    step_by: v.raw_get::<i32, f64>(7).unwrap(),
+                                    deicimals: v.raw_get::<i32, usize>(8).unwrap(),
                                     keybinding: None,
                                 });
                                 println!("Adding global with name: {}: {:?}", k, &control);
@@ -69,12 +69,37 @@ impl ControlHandler {
                             }
                             "TextInput" => {
                                 let control = Control::TextInputType(TextInput {
-                                    name: k.clone(),
-                                    value: v.raw_get::<i32, String>(2).unwrap(),
+                                    name: v.raw_get::<i32, String>(2).unwrap(),
                                     label: v.raw_get::<i32, String>(3).unwrap(),
+                                    value: v.raw_get::<i32, String>(4).unwrap(),
                                 });
                                 println!("Adding global with name: {}: {:?}", k, &control);
                                 generator.lua.globals().set(k, control.clone()).unwrap();
+                                new_controls.push(control);
+                            }
+                            "ComboBox" => {
+                                let mut entries = vec![];
+                                for i in 4..20 {
+                                    match v.raw_get::<i32, String>(i) {
+                                        Ok(s) => { entries.push(s); }
+                                        Err(_) => { break; }
+                                    }
+                                }
+
+                                let control = Control::ComboBoxType(ComboBoxInput {
+                                    name: v.raw_get::<i32, String>(2).unwrap(),
+                                    label: v.raw_get::<i32, String>(3).unwrap(),
+                                    value: v.raw_get::<i32, String>(4).unwrap(),
+                                    entries: entries,
+                                });
+
+                                println!("Adding global with name: {}: {:?}", k, &control);
+                                generator.lua.globals().set(k, control.clone()).unwrap();
+                                new_controls.push(control);
+                            }
+                            "Label" => {
+                                let control = Control::Label(v.raw_get::<i32, String>(2).unwrap());
+                                println!("Adding global with name: {}: {:?}", k, &control);
                                 new_controls.push(control);
                             }
                             _ => {}
