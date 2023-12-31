@@ -28,7 +28,7 @@ pub struct ComboBoxInput {
     pub name: String,
     pub value: String,
     pub label: String,
-    pub entries: Vec::<String>
+    pub entries: Vec::<String>,
 }
 
 impl UiElement for Slider {

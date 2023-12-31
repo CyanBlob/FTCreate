@@ -17,6 +17,8 @@ pub enum Control
     TextInputType(TextInput),
     ComboBoxType(ComboBoxInput),
     Label(String),
+    Separator,
+    Spacer,
 }
 
 impl UserData for Control {
@@ -26,13 +28,7 @@ impl UserData for Control {
                 Control::SliderType(s) => {
                     Ok(s.value)
                 }
-                Control::Label(l) => {
-                    Ok(0.0)
-                }
-                Control::TextInputType(t) => {
-                    Ok(0.0)
-                }
-                Control::ComboBoxType(c) => {
+                _ => {
                     Ok(0.0)
                 }
             };
@@ -40,9 +36,6 @@ impl UserData for Control {
 
         fields.add_field_method_get("text", |_, this| {
             return match this {
-                Control::SliderType(s) => {
-                    Ok("".to_string())
-                }
                 Control::Label(l) => {
                     Ok(l.to_string())
                 }
@@ -51,6 +44,9 @@ impl UserData for Control {
                 }
                 Control::ComboBoxType(c) => {
                     Ok(c.value.to_string())
+                }
+                _ => {
+                    Ok("".to_string())
                 }
             };
         });
@@ -64,7 +60,13 @@ impl Control
         match self {
             Control::SliderType(s) => { s.render(ui); }
             Control::TextInputType(t) => { t.render(ui); }
-            Control::ComboBoxType(c) => {c.render(ui)}
+            Control::ComboBoxType(c) => { c.render(ui) }
+            Control::Separator => {
+                ui.separator();
+            }
+            Control::Spacer => {
+                ui.add_space(10.0);
+            }
             Control::Label(l) => {
                 ui.separator();
                 ui.label(l.to_string());
@@ -79,6 +81,7 @@ impl Control
             Control::Label(l) => { l.to_string() }
             Control::TextInputType(t) => { t.name.to_string() }
             Control::ComboBoxType(c) => { c.name.to_string() }
+            _ => { "".to_string() }
         };
     }
 }

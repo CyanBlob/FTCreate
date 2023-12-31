@@ -63,7 +63,6 @@ impl ControlHandler {
                                     deicimals: v.raw_get::<i32, usize>(8).unwrap(),
                                     keybinding: None,
                                 });
-                                println!("Adding global with name: {}: {:?}", k, &control);
                                 generator.lua.globals().set(k, control.clone()).unwrap();
                                 new_controls.push(control);
                             }
@@ -73,7 +72,6 @@ impl ControlHandler {
                                     label: v.raw_get::<i32, String>(3).unwrap(),
                                     value: v.raw_get::<i32, String>(4).unwrap(),
                                 });
-                                println!("Adding global with name: {}: {:?}", k, &control);
                                 generator.lua.globals().set(k, control.clone()).unwrap();
                                 new_controls.push(control);
                             }
@@ -93,13 +91,19 @@ impl ControlHandler {
                                     entries: entries,
                                 });
 
-                                println!("Adding global with name: {}: {:?}", k, &control);
                                 generator.lua.globals().set(k, control.clone()).unwrap();
                                 new_controls.push(control);
                             }
                             "Label" => {
                                 let control = Control::Label(v.raw_get::<i32, String>(2).unwrap());
-                                println!("Adding global with name: {}: {:?}", k, &control);
+                                new_controls.push(control);
+                            }
+                            "Separator" => {
+                                let control = Control::Separator;
+                                new_controls.push(control);
+                            }
+                            "Spacer" => {
+                                let control = Control::Spacer;
                                 new_controls.push(control);
                             }
                             _ => {}
@@ -121,6 +125,7 @@ impl ControlHandler {
         for generator in &self.generators
         {
             for control in &generator.controls {
+                println!("Adding control: {:?}", control.get_name());
                 generator.lua.globals().set(control.get_name(), control.clone()).unwrap();
             }
             let tick: Function<'_> = generator.lua.globals().get("tick").unwrap();

@@ -1,7 +1,7 @@
 controlsChanged = true
 
 function pack(...)
-    return {n = select("#", ...), ...}
+    return { n = select("#", ...), ... }
 end
 
 function get_controls()
@@ -9,15 +9,15 @@ function get_controls()
 
     --if LuaSlider ~= nil then
 
-        --if LuaSlider.value == 20 then
-            --print("Adding new slider")
-            --controls["AnotherSlider"] = pack("Slider", "Another Slider", 0, 1, .5, .1, 2)
-        --end
+    --if LuaSlider.value == 20 then
+    --print("Adding new slider")
+    --controls["AnotherSlider"] = pack("Slider", "Another Slider", 0, 1, .5, .1, 2)
+    --end
 
-        --print("Val: ", LuaSlider.value)
-        --controls["LuaSlider"] = pack("Slider", "Main Slider", 0, 30, LuaSlider.value, 1, 2)
+    --print("Val: ", LuaSlider.value)
+    --controls["LuaSlider"] = pack("Slider", "Main Slider", 0, 30, LuaSlider.value, 1, 2)
     --else
-        --controls["LuaSlider"] = pack("Slider", "Main Slider", 0, 30, 0, 1, 2)
+    --controls["LuaSlider"] = pack("Slider", "Main Slider", 0, 30, 0, 1, 2)
     --end
 
     controlsChanged = false

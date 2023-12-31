@@ -149,7 +149,6 @@ impl generator::Generator for DcMotor {
                 let mut default_code: String = "".into();
                 for speed_button in buttons {
                     if let Some(button) = speed_button.button {
-
                         if button == default {
                             default_code = format!("\t\t\telse {{\n\t\t\t\t {}.setPower({});\n\t\t\t}}\n\n", &self.name, &speed_button.value);
                             continue;
@@ -176,9 +175,7 @@ impl generator::Generator for DcMotor {
                 code += &default_code;
 
                 for speed_axis in &self.speeds_axis {
-
                     if let Some(axis) = speed_axis.axis {
-
                         match speed_axis.reversed {
                             true => {
                                 code += &format!(
