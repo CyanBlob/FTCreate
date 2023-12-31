@@ -6,5 +6,5 @@ pub mod subsystem;
 
 pub mod generator;
 pub mod lua_generator;
-pub mod slider;
+pub mod ui_elements;
 pub mod control;

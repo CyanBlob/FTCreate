@@ -8,17 +8,12 @@ function get_controls()
     controls = {}
 
     if LuaSlider2 ~= nil then
-
-        if LuaSlider2.value == 20 then
-            print("Adding new slider")
-            controls["AnotherSlider2"] = pack("Slider", 0, 1, .5, .1, 2, "Another Slider 2")
-        end
-
-        print("Val: 2 ", LuaSlider2.value)
         controls["LuaSlider2"] = pack("Slider", 0, 30, LuaSlider2.value, 1, 2, "Main Slider 2")
     else
         controls["LuaSlider2"] = pack("Slider", 0, 30, 0, 1, 2, "Main Slider 2")
     end
+
+    controls["PS2_Name"] = pack("TextInput", "PrintSlider2_Name", "PrintSlider2_Name")
 
     controlsChanged = false
 
@@ -26,16 +21,13 @@ function get_controls()
 end
 
 function tick()
-    if LuaSlider2 ~= nil then
-        print("Val 2: ", LuaSlider2.value)
+    if PS2_Name ~= nil then
+        print("Has name")
+    	print(PS2_Name.text)
     end
 end
 
 function controls_changed()
-    if LuaSlider2 ~= nil then
-        print("Test")
-        return LuaSlider2.value == 20
-    end
     return controlsChanged
 end
 

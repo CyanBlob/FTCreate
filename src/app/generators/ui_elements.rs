@@ -15,6 +15,13 @@ pub struct Slider {
     pub keybinding: Option<Keybinding<f32>>,
 }
 
+#[derive(Clone, Debug)]
+pub struct TextInput {
+    pub name: String,
+    pub value: String,
+    pub label: String,
+}
+
 impl UiElement for Slider {
     fn render(&mut self, ui: &mut Ui) {
         ui.add(
@@ -24,5 +31,11 @@ impl UiElement for Slider {
                 .step_by(self.step_by)
             ,
         );
+    }
+}
+
+impl UiElement for TextInput {
+    fn render(&mut self, ui: &mut Ui) {
+        ui.text_edit_singleline(&mut self.value);
     }
 }

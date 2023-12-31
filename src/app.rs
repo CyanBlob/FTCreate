@@ -119,6 +119,9 @@ impl TemplateApp {
         if let Some(storage) = cc.storage {
             let mut obj: TemplateApp = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
 
+            obj.lua_scripts.clear();
+            obj.control_handler.generators.clear();
+
             let paths = fs::read_dir("./lua_modules").unwrap();
 
             for path in paths {

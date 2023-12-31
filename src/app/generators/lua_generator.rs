@@ -5,7 +5,7 @@ use egui::Ui;
 use mlua::{Function, Lua, Table, UserData, UserDataMethods};
 use crate::app::generators::control::{Control};
 use crate::app::generators::control::Control::SliderType;
-use crate::app::generators::slider::{Slider};
+use crate::app::generators::ui_elements::{Slider, TextInput};
 
 pub struct ControlHandler {
     pub(crate) generators: Vec<LuaGenerator>,
@@ -62,6 +62,16 @@ impl ControlHandler {
                                     deicimals: v.raw_get::<i32, usize>(6).unwrap(),
                                     label: v.raw_get::<i32, String>(7).unwrap(),
                                     keybinding: None,
+                                });
+                                println!("Adding global with name: {}: {:?}", k, &control);
+                                generator.lua.globals().set(k, control.clone()).unwrap();
+                                new_controls.push(control);
+                            }
+                            "TextInput" => {
+                                let control = Control::TextInputType(TextInput {
+                                    name: k.clone(),
+                                    value: v.raw_get::<i32, String>(2).unwrap(),
+                                    label: v.raw_get::<i32, String>(3).unwrap(),
                                 });
                                 println!("Adding global with name: {}: {:?}", k, &control);
                                 generator.lua.globals().set(k, control.clone()).unwrap();
