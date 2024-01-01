@@ -9,7 +9,7 @@ function get_controls()
 
     index = 1
 
-    controls[index] = pack("Label", "DC Motor")
+    controls[index] = pack("Label", "DC Motor 2")
     index = index + 1
 
     if DCM_IsDrivetrain ~= nil then

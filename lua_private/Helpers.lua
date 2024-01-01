@@ -4,6 +4,7 @@ end
 
 keybindings = {}
 
+keybindings["default_button"] = "button"
 keybindings["a"] = "button"
 keybindings["b"] = "button"
 keybindings["x"] = "button"
@@ -19,6 +20,7 @@ keybindings["dpad_down"] = "button"
 keybindings["start"] = "button"
 keybindings["select"] = "button"
 
+keybindings["default_axis"] = "axis"
 keybindings["left_trigger"] = "axis"
 keybindings["right_trigger"] = "axis"
 keybindings["left_stick_x"] = "axis"

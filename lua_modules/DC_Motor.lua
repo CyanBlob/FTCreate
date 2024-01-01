@@ -3,6 +3,7 @@ require "lua_private.Helpers"
 controlsChanged = true
 
 run_mode = "Run using encoders"
+num_positions = 0
 
 function get_controls()
     controls = {}
@@ -53,6 +54,83 @@ function get_controls()
             controls[index] = pack("Slider", "DCM_NumPositions", "Number of positions", 0, 10, 0, 1, 0)
             index = index + 1
         end
+
+        for i = 1, num_positions, 1 do
+            -- Lookup slider in global table (_G)
+            if _G["DCM_Position" .. i] ~= nil then
+                controls[index] = pack("Slider", "DCM_Position" .. i, "Position: " .. i, 0, 20000,
+                    _G["DCM_Position" .. i].value, 1, 0)
+                index = index + 1
+
+                -- Lookup keybinding
+                controls[index] = pack("ComboBox", "DCM_Keybind" .. i, "Keybinding", _G["DCM_Keybind" .. i].text,
+                    "default_button",
+                    "a",
+                    "b",
+                    "x",
+                    "y")
+                index = index + 1
+            else
+                controls[index] = pack("Slider", "DCM_Position" .. i, "Position: " .. i, 0, 20000, 0, 1, 0)
+                index = index + 1
+
+                controls[index] = pack("ComboBox", "DCM_Keybind" .. i, "Keybinding", "default_button",
+                    "default_button",
+                    "a",
+                    "b",
+                    "x",
+                    "y")
+                index = index + 1
+            end
+
+            controls[index] = pack("Separator")
+            index = index + 1
+            controls[index] = pack("Spacer")
+            index = index + 1
+        end
+    end
+
+    if DCM_Direction ~= nil then
+        controls[index] = pack("ComboBox", "DCM_Direction", "Direction", DCM_Direction.text, "Forward", "Reverse")
+        index = index + 1
+    else
+        controls[index] = pack("ComboBox", "DCM_Direction", "Direction", "Forward", "Forward", "Reverse")
+        index = index + 1
+    end
+
+    if run_mode == "Run to position" then
+        controls[index] = pack("Slider", "DCM_MaxSpeed", "Max Speed", 0, 12000, 0, .01, 2)
+        index = index + 1
+    else
+        controls[index] = pack("Slider", "DCM_MaxPower", "Max Power", 0, 1, 1, .01, 2)
+        index = index + 1
+    end
+
+    controlsChanged = false
+
+    return controls
+end
+
+function tick()
+    if run_mode ~= DCM_RunMode.text then
+        controlsChanged = true
+        run_mode = DCM_RunMode.text
+    end
+    if DCM_NumPositions ~= nil then
+        if DCM_NumPositions.value ~= num_positions then
+            num_positions = DCM_NumPositions.value
+            controlsChanged = true
+        end
+    end
+end
+
+function controls_changed()
+    return controlsChanged
+end
+
+function generate_includes()
+    return "// lua includes\n"
+end
 
 function generate_globals()
     return "// lua globals\n"

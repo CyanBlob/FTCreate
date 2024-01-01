@@ -52,7 +52,6 @@ impl ControlHandler {
                 v: Table<'_>
             | {
                 i += 1;
-                println!("Using ID: {}", i);
                 match v.raw_get::<i32, String>(1) {
                     Ok(s) => {
                         match s.as_str() {
