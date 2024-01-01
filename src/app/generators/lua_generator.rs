@@ -1,11 +1,9 @@
 use std::fs::File;
 use std::io::Read;
-use std::sync::WaitTimeoutResult;
 use egui::Ui;
 use mlua::{Function, Lua, Table, UserData, UserDataMethods};
 use crate::app::generators::control::{Control};
-use crate::app::generators::control::Control::SliderType;
-use crate::app::generators::ui_elements::{ComboBoxInput, Slider, TextInput};
+use crate::app::generators::ui_elements::{CheckboxInput, ComboBoxInput, Slider, TextInput};
 
 pub struct ControlHandler {
     pub(crate) generators: Vec<LuaGenerator>,
@@ -30,6 +28,7 @@ impl ControlHandler {
 
     pub fn add_controls(&mut self)
     {
+        let mut i = 0;
         for generator in &mut self.generators {
             let mut new_controls = vec![];
 
@@ -39,16 +38,21 @@ impl ControlHandler {
             let changed = controls_changed.call::<_, bool>(()).unwrap();
 
             if changed == false {
+                // ensure unique IDs for each control
+                i += 100;
                 continue;
             }
 
             generator.controls.clear();
 
-            let table = get_controls.call::<_, Table>(()).unwrap();
+            let table = get_controls.call::<_, Table<'_>>(()).unwrap();
 
-            println!("{:?}", table);
-
-            table.for_each(|k: String, v: Table| {
+            table.for_each(|
+                k: String,
+                v: Table<'_>
+            | {
+                i += 1;
+                println!("Using ID: {}", i);
                 match v.raw_get::<i32, String>(1) {
                     Ok(s) => {
                         match s.as_str() {
@@ -77,7 +81,7 @@ impl ControlHandler {
                             }
                             "ComboBox" => {
                                 let mut entries = vec![];
-                                for i in 4..20 {
+                                for i in 5..20 {
                                     match v.raw_get::<i32, String>(i) {
                                         Ok(s) => { entries.push(s); }
                                         Err(_) => { break; }
@@ -88,10 +92,19 @@ impl ControlHandler {
                                     name: v.raw_get::<i32, String>(2).unwrap(),
                                     label: v.raw_get::<i32, String>(3).unwrap(),
                                     value: v.raw_get::<i32, String>(4).unwrap(),
+                                    id: i,
                                     entries: entries,
                                 });
 
                                 generator.lua.globals().set(k, control.clone()).unwrap();
+                                new_controls.push(control);
+                            }
+                            "Checkbox" => {
+                                let control = Control::CheckboxType(CheckboxInput {
+                                    name: v.raw_get::<i32, String>(2).unwrap(),
+                                    label: v.raw_get::<i32, String>(3).unwrap(),
+                                    value: v.raw_get::<i32, i32>(4).unwrap() == 1,
+                                });
                                 new_controls.push(control);
                             }
                             "Label" => {
@@ -125,7 +138,6 @@ impl ControlHandler {
         for generator in &self.generators
         {
             for control in &generator.controls {
-                println!("Adding control: {:?}", control.get_name());
                 generator.lua.globals().set(control.get_name(), control.clone()).unwrap();
             }
             let tick: Function<'_> = generator.lua.globals().get("tick").unwrap();
@@ -193,7 +205,7 @@ impl ControlHandler {
 }
 
 impl UserData for LuaGenerator {
-    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(_methods: &mut M) {
         /*methods.add_method_mut("add_slider", |_, this, (min, max, value): (f32, f32, f32)| {
             println!("Adding slider");
             this.controls.push(Control::SliderType(Slider {

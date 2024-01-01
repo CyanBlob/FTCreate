@@ -1,8 +1,6 @@
-controlsChanged = true
+require "lua_private.Helpers"
 
-function pack(...)
-    return { n = select("#", ...), ... }
-end
+controlsChanged = true
 
 function get_controls()
     controls = {}
@@ -24,6 +22,9 @@ function get_controls()
 
     controls[7] = pack("ComboBox", "ComboTest", "Test combo", "One", "Two", "Three")
 
+    controls[8] = pack("Checkbox", "CheckTest", "Test", 1)
+    controls[9] = pack("Checkbox", "CheckTest2", "Test", 0)
+
     controlsChanged = false
 
     return controls
@@ -31,8 +32,6 @@ end
 
 function tick()
     if PS2_Name ~= nil then
-        print("Has name")
-        print(PS2_Name.text)
     end
 end
 

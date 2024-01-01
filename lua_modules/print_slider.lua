@@ -27,7 +27,7 @@ end
 
 function tick()
     if LuaSlider ~= nil then
-        print("Val: ", LuaSlider.value)
+        --print("Val: ", LuaSlider.value)
     end
 end
 

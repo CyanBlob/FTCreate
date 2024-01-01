@@ -168,7 +168,9 @@ impl TemplateApp {
             includes += &subsystem.generate_includes().to_string();
         });
 
-        new_code += &*self.control_handler.generate_includes();
+        let mut lua_includes = self.control_handler.generate_includes();
+        lua_includes = lua_includes.to_string().split("\n").map(|line| {format!("\n{}", line)}).collect::<String>();
+        new_code += &lua_includes;
 
         // remove duplicate includes
         let mut includes_collection = includes.lines().collect::<Vec<&str>>();
@@ -200,9 +202,11 @@ impl TemplateApp {
             new_code += &subsystem.generate_globals();
         });
 
-        new_code += &*self.control_handler.generate_globals();
+        let mut lua_globals = self.control_handler.generate_globals();
+        lua_globals = lua_globals.to_string().split("\n").map(|line| {format!("\n\t{}", line)}).collect::<String>();
+        new_code += &lua_globals;
 
-        new_code += "\t@Override\n\
+        new_code += "\n\t@Override\n\
         \tpublic void runOpMode() {\n\n\
             \t\ttelemetry.addData(\"Status\", \"Initialized\");\n\
             \t\ttelemetry.update();";
@@ -215,9 +219,11 @@ impl TemplateApp {
             new_code += &subsystem.generate_init();
         });
 
-        new_code += &*self.control_handler.generate_init();
+        let mut lua_init = self.control_handler.generate_init();
+        lua_init = lua_init.to_string().split("\n").map(|line| {format!("\n\t\t{}", line)}).collect::<String>();
+        new_code += &lua_init;
 
-        new_code += "\t\twaitForStart();\n\n\
+        new_code += "\n\t\twaitForStart();\n\n\
             \t\t// Reset the timer (stopwatch) because we only care about time since the game\n\
             \t\t// actually starts\n\
             \t\truntime.reset();\n\n\
@@ -230,7 +236,11 @@ impl TemplateApp {
             new_code += &subsystem.generate_loop_one_time_setup();
         });
 
-        new_code += &*self.control_handler.generate_loop_one_time_setup();
+        let mut lua_one_time_setup = self.control_handler.generate_loop_one_time_setup();
+        lua_one_time_setup = lua_one_time_setup.to_string().split("\n").map(|line| {format!("\n\t\t\t{}", line)}).collect::<String>();
+        new_code += &lua_one_time_setup;
+
+        new_code += "\n";
 
         // loop
         new_code += &self.drivetrain.generate_loop();
@@ -239,9 +249,11 @@ impl TemplateApp {
             new_code += &subsystem.generate_loop();
         });
 
-        new_code += &*self.control_handler.generate_loop();
+        let mut lua_loop =  self.control_handler.generate_loop();
+        lua_loop = lua_loop.to_string().split("\n").map(|line| {format!("\n\t\t\t{}", line)}).collect::<String>();
+        new_code += &lua_loop;
 
-        new_code += "\t\t\ttelemetry.update();\n\
+        new_code += "\n\t\t\ttelemetry.update();\n\
                 \t\t}\n\
             \t}\n}";
 

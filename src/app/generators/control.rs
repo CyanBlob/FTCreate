@@ -1,7 +1,7 @@
 use egui::Ui;
 use mlua::prelude::LuaUserData;
 use mlua::{UserData, UserDataFields};
-use crate::app::generators::ui_elements::{ComboBoxInput, Slider, TextInput};
+use crate::app::generators::ui_elements::{CheckboxInput, ComboBoxInput, Slider, TextInput};
 
 pub trait SizedUserData: LuaUserData + Sized {}
 
@@ -17,6 +17,7 @@ pub enum Control
     TextInputType(TextInput),
     ComboBoxType(ComboBoxInput),
     Label(String),
+    CheckboxType(CheckboxInput),
     Separator,
     Spacer,
 }
@@ -27,6 +28,12 @@ impl UserData for Control {
             return match this {
                 Control::SliderType(s) => {
                     Ok(s.value)
+                }
+                Control::CheckboxType(b) => {
+                    match b.value {
+                        true => { Ok(1.0) }
+                        false => { Ok(0.0) }
+                    }
                 }
                 _ => {
                     Ok(0.0)
@@ -61,6 +68,9 @@ impl Control
             Control::SliderType(s) => { s.render(ui); }
             Control::TextInputType(t) => { t.render(ui); }
             Control::ComboBoxType(c) => { c.render(ui) }
+            Control::CheckboxType(b) => {
+                ui.checkbox(&mut b.value, &b.label);
+            }
             Control::Separator => {
                 ui.separator();
             }
@@ -81,6 +91,7 @@ impl Control
             Control::Label(l) => { l.to_string() }
             Control::TextInputType(t) => { t.name.to_string() }
             Control::ComboBoxType(c) => { c.name.to_string() }
+            Control::CheckboxType(c) => { c.name.to_string() }
             _ => { "".to_string() }
         };
     }
