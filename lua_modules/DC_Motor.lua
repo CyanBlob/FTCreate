@@ -112,9 +112,11 @@ function get_controls()
 end
 
 function tick()
-    if run_mode ~= DCM_RunMode.text then
-        controlsChanged = true
-        run_mode = DCM_RunMode.text
+    if DCM_RunMode ~= nil then
+        if run_mode ~= DCM_RunMode.text then
+            controlsChanged = true
+            run_mode = DCM_RunMode.text
+        end
     end
     if DCM_NumPositions ~= nil then
         if DCM_NumPositions.value ~= num_positions then
@@ -129,15 +131,27 @@ function controls_changed()
 end
 
 function generate_includes()
-    return "// lua includes\n"
+    return "import com.qualcomm.robotcore.hardware.DcMotor;\n" ..
+        "import org.firstinspires.ftc.robotcore.external.Telemetry;\n" ..
+        "import com.qualcomm.robotcore.hardware.HardwareMap;\n" ..
+        "import com.qualcomm.robotcore.hardware.DcMotorEx;\n" ..
+        "import com.qualcomm.robotcore.hardware.DcMotorSimple;\n\n"
 end
 
 function generate_globals()
-    return "// lua globals\n"
+    string = ""
+    if DCM_Name ~= nil then
+        string = string .. "private DcMotorEx " .. DCM_Name.text .. " = null;\n\n"
+    end
+    return string
 end
 
 function generate_init()
-    return "// lua init\n"
+    string = ""
+    if DCM_Name ~= nil then
+        string = string .. "// in"
+    end
+    return string
 end
 
 function generate_loop_one_time_setup()

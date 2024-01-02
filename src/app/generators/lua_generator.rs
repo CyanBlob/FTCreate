@@ -5,25 +5,30 @@ use mlua::{Function, Lua, Table, UserData, UserDataMethods};
 use crate::app::generators::control::{Control};
 use crate::app::generators::ui_elements::{CheckboxInput, ComboBoxInput, Slider, TextInput};
 
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct ControlHandler {
     pub(crate) generators: Vec<LuaGenerator>,
 }
 
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct LuaGenerator {
+    #[serde(skip)]
     pub lua: Lua,
     pub script: String,
     pub script_data: String,
     pub controls: Vec<Control>,
+    #[serde(skip)]
     pub loaded: bool,
 }
 
 impl ControlHandler {
     pub fn render(&mut self, ui: &mut Ui) {
+        self.tick_lua();
+
         self.add_controls();
 
         self.render_controls(ui);
 
-        self.tick_lua();
     }
 
     pub fn add_controls(&mut self)
@@ -47,10 +52,8 @@ impl ControlHandler {
 
             let table = get_controls.call::<_, Table<'_>>(()).unwrap();
 
-            table.for_each(|
-                k: String,
-                v: Table<'_>
-            | {
+            table.for_each(|k: String,
+                            v: Table<'_>| {
                 i += 1;
                 match v.raw_get::<i32, String>(1) {
                     Ok(s) => {

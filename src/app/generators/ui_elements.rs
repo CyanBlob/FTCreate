@@ -4,6 +4,7 @@ use crate::app::generators::control::UiElement;
 use crate::app::generators::keybinding::keybinding::Keybinding;
 
 #[derive(Clone, Debug)]
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct Slider {
     pub name: String,
     pub min: f32,
@@ -16,6 +17,7 @@ pub struct Slider {
 }
 
 #[derive(Clone, Debug)]
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct TextInput {
     pub name: String,
     pub value: String,
@@ -23,6 +25,7 @@ pub struct TextInput {
 }
 
 #[derive(Clone, Debug)]
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct ComboBoxInput {
     pub name: String,
     pub value: String,
@@ -32,6 +35,7 @@ pub struct ComboBoxInput {
 }
 
 #[derive(Clone, Debug)]
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct CheckboxInput {
     pub name: String,
     pub label: String,

@@ -57,8 +57,5 @@ end
 
 function generate_loop()
     string = ""
-    string = string .. "// lua loop code!! Val: " .. tostring(MainSlider2.value) .. "\n"
-    string = string .. "// lua loop code!! Val: " .. tostring(PS2_Name.text) .. "\n"
-    string = string .. "// lua loop code!! Val: " .. tostring(ComboTest.text) .. "\n"
     return string
 end

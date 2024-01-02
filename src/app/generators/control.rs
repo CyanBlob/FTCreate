@@ -10,6 +10,7 @@ pub trait UiElement {
 }
 
 #[derive(Clone, Debug)]
+#[derive(serde::Deserialize, serde::Serialize)]
 #[allow(unused)]
 pub enum Control
 {

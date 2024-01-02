@@ -54,7 +54,6 @@ pub struct TemplateApp {
 
     #[serde(skip)]
     lua: Lua,
-    #[serde(skip)]
     control_handler: ControlHandler,
     lua_scripts: Vec::<String>,
 }
@@ -119,19 +118,10 @@ impl TemplateApp {
         if let Some(storage) = cc.storage {
             let mut obj: TemplateApp = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
 
-            obj.lua_scripts.clear();
-            obj.control_handler.generators.clear();
-
-            let paths = fs::read_dir("./lua_modules").unwrap();
-
-            for path in paths {
-                obj.lua_scripts.push(path.unwrap().path().to_str().unwrap().to_string());
+            for generator in &mut obj.control_handler.generators {
+                generator.load();
             }
 
-            for script in &obj.lua_scripts {
-                println!("Loading: {:?}", script);
-                obj.control_handler.generators.push(LuaGenerator::new(script));
-            }
             return obj;
         }
 
@@ -327,6 +317,23 @@ impl eframe::App for TemplateApp {
                 self.tokio_runtime.spawn(async move {
                     upload_code(code, &tx, file_name.to_owned()).await;
                 });
+            }
+
+            if ui.button("Reload lua modules").clicked() {
+
+                self.lua_scripts.clear();
+                self.control_handler.generators.clear();
+
+                let paths = fs::read_dir("./lua_modules").unwrap();
+
+                for path in paths {
+                    self.lua_scripts.push(path.unwrap().path().to_str().unwrap().to_string());
+                }
+
+                for script in &self.lua_scripts {
+                    println!("Loading: {:?}", script);
+                    self.control_handler.generators.push(LuaGenerator::new(script));
+                }
             }
         });
 

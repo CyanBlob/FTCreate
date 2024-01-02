@@ -77,11 +77,17 @@ function get_controls()
 end
 
 function tick()
-    if run_mode ~= DCM_RunMode.text then
-        controlsChanged = true
-        run_mode = DCM_RunMode.text
+    if DCM_RunMode ~= nil then
+        if run_mode ~= DCM_RunMode.text then
+            controlsChanged = true
+            run_mode = DCM_RunMode.text
+        end
     end
-    if PS2_Name ~= nil then
+    if DCM_NumPositions ~= nil then
+        if DCM_NumPositions.value ~= num_positions then
+            num_positions = DCM_NumPositions.value
+            controlsChanged = true
+        end
     end
 end
 
