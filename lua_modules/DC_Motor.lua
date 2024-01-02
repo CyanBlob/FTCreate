@@ -148,20 +148,36 @@ end
 
 function generate_init()
     string = ""
+
     if DCM_Name ~= nil then
-        string = string .. "// in"
+        string = string .. '// ' .. DCM_Name.text .. ' init\n' ..
+            DCM_Name.text .. ' = hardwareMap.get(DcMotorEx.class, "' .. DCM_Name.text .. '");\n'
+
+        if DCM_Direction.text == "Reverse" then
+            string = string .. DCM_Name.text .. '.setDirection(DcMotor.Direction.REVERSE);\n'
+        else
+            string = string .. DCM_Name.text .. '.setDirection(DcMotor.Direction.FORWARD);\n'
+        end
+
+        string = string .. DCM_Name.text .. '.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);\n' ..
+            DCM_Name.text .. '.setTargetPosition(0);\n'
+
+        if DCM_RunMode.text == "Run to position" then
+            string = string .. DCM_Name.text .. '.setMode(DcMotor.RunMode.RUN_TO_POSITION);\n'
+        elseif DCM_RunMode.text == "Run using encoders" then
+            string = string .. DCM_Name.text .. '.setMode(DcMotor.RunMode.RUN_USING_ENCODERS);\n'
+        else
+            string = string .. DCM_Name.text .. '.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODERS);\n'
+        end
     end
     return string
 end
 
 function generate_loop_one_time_setup()
-    return "// lua loop one time setup\n"
+    return ""
 end
 
 function generate_loop()
     string = ""
-    --string = string .. "// lua loop code!! Val: " .. tostring(MainSlider2.value) .. "\n"
-    --string = string .. "// lua loop code!! Val: " .. tostring(PS2_Name.text) .. "\n"
-    --string = string .. "// lua loop code!! Val: " .. tostring(ComboTest3.text) .. "\n"
     return string
 end

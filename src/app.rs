@@ -159,8 +159,8 @@ impl TemplateApp {
         });
 
         let mut lua_includes = self.control_handler.generate_includes();
-        lua_includes = lua_includes.to_string().split("\n").map(|line| {format!("\n{}", line)}).collect::<String>();
-        new_code += &lua_includes;
+        lua_includes = lua_includes.to_string().split("\n").map(|line| { format!("\n{}", line) }).collect::<String>();
+        includes += &lua_includes;
 
         // remove duplicate includes
         let mut includes_collection = includes.lines().collect::<Vec<&str>>();
@@ -193,7 +193,7 @@ impl TemplateApp {
         });
 
         let mut lua_globals = self.control_handler.generate_globals();
-        lua_globals = lua_globals.to_string().split("\n").map(|line| {format!("\n\t{}", line)}).collect::<String>();
+        lua_globals = lua_globals.to_string().split("\n").map(|line| { format!("\n\t{}", line) }).collect::<String>();
         new_code += &lua_globals;
 
         new_code += "\n\t@Override\n\
@@ -210,7 +210,7 @@ impl TemplateApp {
         });
 
         let mut lua_init = self.control_handler.generate_init();
-        lua_init = lua_init.to_string().split("\n").map(|line| {format!("\n\t\t{}", line)}).collect::<String>();
+        lua_init = lua_init.to_string().split("\n").map(|line| { format!("\n\t\t{}", line) }).collect::<String>();
         new_code += &lua_init;
 
         new_code += "\n\t\twaitForStart();\n\n\
@@ -227,7 +227,7 @@ impl TemplateApp {
         });
 
         let mut lua_one_time_setup = self.control_handler.generate_loop_one_time_setup();
-        lua_one_time_setup = lua_one_time_setup.to_string().split("\n").map(|line| {format!("\n\t\t\t{}", line)}).collect::<String>();
+        lua_one_time_setup = lua_one_time_setup.to_string().split("\n").map(|line| { format!("\n\t\t\t{}", line) }).collect::<String>();
         new_code += &lua_one_time_setup;
 
         new_code += "\n";
@@ -239,8 +239,8 @@ impl TemplateApp {
             new_code += &subsystem.generate_loop();
         });
 
-        let mut lua_loop =  self.control_handler.generate_loop();
-        lua_loop = lua_loop.to_string().split("\n").map(|line| {format!("\n\t\t\t{}", line)}).collect::<String>();
+        let mut lua_loop = self.control_handler.generate_loop();
+        lua_loop = lua_loop.to_string().split("\n").map(|line| { format!("\n\t\t\t{}", line) }).collect::<String>();
         new_code += &lua_loop;
 
         new_code += "\n\t\t\ttelemetry.update();\n\
@@ -319,8 +319,7 @@ impl eframe::App for TemplateApp {
                 });
             }
 
-            if ui.button("Reload lua modules").clicked() {
-
+            if ui.button("Reload all lua modules").clicked() {
                 self.lua_scripts.clear();
                 self.control_handler.generators.clear();
 
@@ -333,6 +332,21 @@ impl eframe::App for TemplateApp {
                 for script in &self.lua_scripts {
                     println!("Loading: {:?}", script);
                     self.control_handler.generators.push(LuaGenerator::new(script));
+                }
+            }
+
+            if ui.button("Load new lua modules").clicked() {
+                let paths = fs::read_dir("./lua_modules").unwrap();
+
+                for path in paths {
+                    let script = path.unwrap().path().to_str().unwrap().to_string();
+                    if !self.lua_scripts.contains(&script) {
+                        println!("Loading: {:?}", &script);
+
+                        self.lua_scripts.push(script);
+
+                        self.control_handler.generators.push(LuaGenerator::new(self.lua_scripts.last().unwrap()));
+                    }
                 }
             }
         });
