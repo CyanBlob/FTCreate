@@ -19,7 +19,7 @@ function get_controls()
     controls[index] = spacer()
     index = index + 1
 
-    controls[index] = textInput("DCM_Name", "DC Motor", "DC Motor")
+    controls[index] = textInput("DCM_Name", "DC Motor", "DC_Motor")
     index = index + 1
 
     controls[index] = comboBox("DCM_RunMode", "Run Mode", "Run using encoders", "Run using encoders",
@@ -39,13 +39,7 @@ function get_controls()
             controls[index] = slider("DCM_Position" .. i, "Position: " .. i, 0, 20000, 0, 1, 0)
             index = index + 1
 
-            -- Lookup keybinding
-            controls[index] = comboBox("DCM_Keybind" .. i, "Keybinding", "default_button",
-                "default_button",
-                "a",
-                "b",
-                "x",
-                "y")
+            controls[index] = keybindingComboBox("DCM_Keybind" .. i, "Keybinding", "default_button")
             index = index + 1
 
             controls[index] = spacer()
@@ -54,6 +48,15 @@ function get_controls()
             index = index + 1
         end
         controls[index] = spacer()
+        index = index + 1
+    else -- normal run mode
+        controls[index] = spacer()
+        index = index + 1
+        controls[index] = keybindingComboBox("DCM_Keybind", "Keybinding", "default_button")
+        index = index + 1
+        controls[index] = spacer()
+        index = index + 1
+        controls[index] = separator()
         index = index + 1
     end
 
@@ -141,6 +144,50 @@ function generate_loop_one_time_setup()
 end
 
 function generate_loop()
+    if not exists(DCM_IsDrivetrain) then
+        return ""
+    end
+    if DCM_IsDrivetrain.value == 1 then
+        return generate_drivetrain_loop()
+    end
+
+    return generate_normal_loop()
+end
+
+function generate_drivetrain_loop()
+    return ""
+end
+
+function generate_normal_loop()
     string = ""
+    if run_mode == "Run to position" then
+        for i = 1, num_positions, 1 do
+            position = _G["DCM_Position" .. i]
+            if exists(position) then
+                keybind = _G["DCM_Keybind" .. i]
+                if isButton(keybind.text) then
+                    string = string .. "if (gamepad1." .. keybind.text .. ") {\n"
+                    string = string .. "\t" .. DCM_Name.text .. ".setTargetPosition(" .. position.value .. ");\n"
+                    string = string .. "\t" .. DCM_Name.text .. ".setMode(DcMotor.RUN_TO_POSITION);\n"
+                    string = string .. "\t" .. DCM_Name.text .. ".setVelocity(" .. DCM_MaxSpeed.value .. ");\n"
+                    string = string .. "}\n"
+                end
+                if isAxis(_G["DCM_Keybind" .. i].text) then
+                    string = string .. "if (gamepad1." .. keybind.text .. " > 0) {\n"
+                    string = string .. "\t" .. DCM_Name.text .. ".setPower(gamepad1." .. position.value .. ");\n"
+                    string = string .. "}\n"
+                end
+            end
+        end
+    else
+        keybind = DCM_Keybind
+        if isButton(keybind.text) then
+            string = string .. "if (gamepad1." .. keybind.text .. ") {\n"
+            string = string .. "\t" .. DCM_Name.text .. ".setPower(" .. DCM_MaxPower.value .. ");\n"
+            string = string .. "}\n"
+        else
+            string = string .. DCM_Name.text .. ".setPower(gamepad1." .. keybind.text .. " * " .. DCM_MaxPower.value .. ");\n"
+        end
+    end
     return string
 end

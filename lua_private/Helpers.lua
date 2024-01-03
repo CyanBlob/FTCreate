@@ -34,6 +34,125 @@ function comboBox(name, label, default, ...)
     end
 end
 
+function buttonComboBox(name, label, default)
+    if exists(_G[name]) then
+        return pack("ComboBox", name, label, _G[name].text,
+            "default_button",
+            "a",
+            "b",
+            "x",
+            "y",
+            "left_stick_button",
+            "right_stick_button",
+            "left_bumper",
+            "right_bumper",
+            "dpad_left",
+            "dpad_right",
+            "dpad_up",
+            "dpad_down",
+            "start",
+            "select"
+        )
+    else
+        return pack("ComboBox", name, label, default,
+            "default_button",
+            "a",
+            "b",
+            "x",
+            "y",
+            "left_stick_button",
+            "right_stick_button",
+            "left_bumper",
+            "right_bumper",
+            "dpad_left",
+            "dpad_right",
+            "dpad_up",
+            "dpad_down",
+            "start",
+            "select"
+        )
+    end
+end
+
+function axisComboBox(name, label, default)
+    if exists(_G[name]) then
+        return pack("ComboBox", name, label, _G[name].text,
+            "default_axis",
+            "left_trigger",
+            "right_trigger",
+            "left_stick_x",
+            "left_stick_y",
+            "right_stick_x",
+            "right_stick_y"
+        )
+    else
+        return pack("ComboBox", name, label, default,
+            "default_axis",
+            "left_trigger",
+            "right_trigger",
+            "left_stick_x",
+            "left_stick_y",
+            "right_stick_x",
+            "right_stick_y"
+        )
+    end
+end
+
+
+function keybindingComboBox(name, label, default)
+    if exists(_G[name]) then
+        return pack("ComboBox", name, label, _G[name].text,
+            "default_button",
+            "a",
+            "b",
+            "x",
+            "y",
+            "left_stick_button",
+            "right_stick_button",
+            "left_bumper",
+            "right_bumper",
+            "dpad_left",
+            "dpad_right",
+            "dpad_up",
+            "dpad_down",
+            "start",
+            "select",
+            "default_axis",
+            "left_trigger",
+            "right_trigger",
+            "left_stick_x",
+            "left_stick_y",
+            "right_stick_x",
+            "right_stick_y"
+        )
+    else
+        return pack("ComboBox", name, label, default,
+            "default_button",
+            "a",
+            "b",
+            "x",
+            "y",
+            "left_stick_button",
+            "right_stick_button",
+            "left_bumper",
+            "right_bumper",
+            "dpad_left",
+            "dpad_right",
+            "dpad_up",
+            "dpad_down",
+            "start",
+            "select",
+            "default_axis",
+            "left_trigger",
+            "right_trigger",
+            "left_stick_x",
+            "left_stick_y",
+            "right_stick_x",
+            "right_stick_y"
+        )
+    end
+end
+
 function slider(name, label, min, max, default, step, decimals)
     if exists(_G[name]) then
         return pack("Slider", name, label, min, max,
@@ -81,3 +200,12 @@ keybindings["left_stick_x"] = "axis"
 keybindings["left_stick_y"] = "axis"
 keybindings["right_stick_x"] = "axis"
 keybindings["right_stick_y"] = "axis"
+
+function isAxis(keybinding)
+    return keybindings[keybinding] == "axis"
+end
+
+function isButton(keybinding)
+    return keybindings[keybinding] == "button"
+end
+

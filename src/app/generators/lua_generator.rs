@@ -83,7 +83,7 @@ impl ControlHandler {
                             }
                             "ComboBox" => {
                                 let mut entries = vec![];
-                                for i in 5..20 {
+                                for i in 5..50 {
                                     match v.raw_get::<i32, String>(i) {
                                         Ok(s) => { entries.push(s); }
                                         Err(_) => { break; }
