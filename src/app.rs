@@ -329,6 +329,7 @@ impl eframe::App for TemplateApp {
             if ui.button("Reload all lua modules").clicked() {
                 self.lua_scripts.clear();
                 self.control_handler.generators.clear();
+                self.control_handler.scripts.clear();
 
                 let paths = fs::read_dir("./lua_modules").unwrap();
 

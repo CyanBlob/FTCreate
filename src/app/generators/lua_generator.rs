@@ -42,7 +42,6 @@ impl ControlHandler {
         self.add_controls();
 
         self.render_controls(ui);
-
     }
 
     pub fn add_controls(&mut self)
@@ -166,14 +165,23 @@ impl ControlHandler {
     {
         let mut removed_generators = vec![];
 
-        for (i, generator) in &mut self.generators.iter_mut().enumerate() {
-            for control in &mut generator.controls {
-                control.render(ui);
-            }
-            if ui.button("Remove component").clicked() {
-                removed_generators.push(i);
-            }
-        }
+        egui::Grid::new("Controls Grid").show(ui, |ui| {
+            self.generators.iter_mut().enumerate().for_each(|(id, generator)| {
+                ui.vertical(|ui| {
+                    for control in &mut generator.controls {
+                        control.render(ui);
+                    }
+                    if ui.button("Remove component").clicked() {
+                        removed_generators.push(id);
+                    }
+                });
+
+                if id % 2 == 1 {
+                    ui.end_row();
+                }
+            });
+        });
+
 
         for generator in removed_generators {
             self.generators.remove(generator);
