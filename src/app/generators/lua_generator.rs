@@ -1,16 +1,18 @@
 use std::fs::File;
 use std::io::Read;
+use std::ptr::addr_of_mut;
 use egui::Ui;
 use mlua::{Function, Lua, Table, UserData, UserDataMethods};
 use crate::app::generators::control::{Control};
 use crate::app::generators::ui_elements::{CheckboxInput, ComboBoxInput, Slider, TextInput};
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct ControlHandler {
-    pub(crate) generators: Vec<LuaGenerator>,
+    pub scripts: Vec<String>,
+    pub generators: Vec<LuaGenerator>,
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct LuaGenerator {
     #[serde(skip)]
     pub lua: Lua,
@@ -19,6 +21,18 @@ pub struct LuaGenerator {
     pub controls: Vec<Control>,
     #[serde(skip)]
     pub loaded: bool,
+}
+
+impl Clone for LuaGenerator {
+    fn clone(&self) -> Self {
+        return Self {
+            lua: Lua::new(),
+            script: self.script.clone(),
+            script_data: self.script_data.clone(),
+            controls: vec![],
+            loaded: false,
+        };
+    }
 }
 
 impl ControlHandler {
@@ -135,10 +149,11 @@ impl ControlHandler {
         }
     }
 
-    pub fn tick_lua(&self)
+    pub fn tick_lua(&mut self)
     {
-        for generator in &self.generators
+        for generator in &mut self.generators
         {
+            generator.load();
             for control in &generator.controls {
                 generator.lua.globals().set(control.get_name(), control.clone()).unwrap();
             }
@@ -149,14 +164,23 @@ impl ControlHandler {
 
     pub fn render_controls(&mut self, ui: &mut Ui)
     {
-        for generator in &mut self.generators {
+        let mut removed_generators = vec![];
+
+        for (i, generator) in &mut self.generators.iter_mut().enumerate() {
             for control in &mut generator.controls {
                 control.render(ui);
             }
+            if ui.button("Remove component").clicked() {
+                removed_generators.push(i);
+            }
+        }
+
+        for generator in removed_generators {
+            self.generators.remove(generator);
         }
     }
 
-    pub fn generate_includes(&mut self) -> String {
+    pub fn generate_includes(&self) -> String {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
@@ -166,7 +190,7 @@ impl ControlHandler {
         code.to_string()
     }
 
-    pub fn generate_init(&mut self) -> String {
+    pub fn generate_init(&self) -> String {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
@@ -176,7 +200,7 @@ impl ControlHandler {
         code.to_string()
     }
 
-    pub fn generate_globals(&mut self) -> String {
+    pub fn generate_globals(&self) -> String {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
@@ -185,7 +209,7 @@ impl ControlHandler {
         }
         code.to_string()
     }
-    pub fn generate_loop_one_time_setup(&mut self) -> String {
+    pub fn generate_loop_one_time_setup(&self) -> String {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
@@ -195,7 +219,7 @@ impl ControlHandler {
         code.to_string()
     }
 
-    pub fn generate_loop(&mut self) -> String {
+    pub fn generate_loop(&self) -> String {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {

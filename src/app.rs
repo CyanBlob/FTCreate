@@ -96,7 +96,7 @@ impl Default for TemplateApp {
             #[cfg(not(target_arch = "wasm32"))]
             tokio_runtime: Runtime::new().unwrap(),
             lua: Lua::new(),
-            control_handler: ControlHandler { generators: vec![] },
+            control_handler: ControlHandler { scripts: vec![], generators: vec![] },
             lua_scripts: vec![],
         }
     }
@@ -122,6 +122,12 @@ impl TemplateApp {
                 generator.load();
             }
 
+            for subsystem in &mut obj.subsystems {
+                for generator in &mut subsystem.control_handler.generators {
+                    generator.load();
+                }
+            }
+
             return obj;
         }
 
@@ -135,7 +141,7 @@ impl TemplateApp {
 
         for script in &obj.lua_scripts {
             println!("Loading: {:?}", script);
-            obj.control_handler.generators.push(LuaGenerator::new(script));
+            obj.control_handler.scripts.push(script.clone());
         }
 
         obj
@@ -235,7 +241,7 @@ impl TemplateApp {
         // loop
         new_code += &self.drivetrain.generate_loop();
 
-        self.subsystems.iter().for_each(|subsystem| {
+        self.subsystems.iter_mut().for_each(|subsystem| {
             new_code += &subsystem.generate_loop();
         });
 
@@ -319,6 +325,7 @@ impl eframe::App for TemplateApp {
                 });
             }
 
+            // TODO: Should no longer add scripts to generators
             if ui.button("Reload all lua modules").clicked() {
                 self.lua_scripts.clear();
                 self.control_handler.generators.clear();
@@ -331,7 +338,19 @@ impl eframe::App for TemplateApp {
 
                 for script in &self.lua_scripts {
                     println!("Loading: {:?}", script);
-                    self.control_handler.generators.push(LuaGenerator::new(script));
+                    self.control_handler.scripts.push(script.clone());
+                }
+
+                for subsystem in &mut self.subsystems {
+                    subsystem.control_handler.generators.clear();
+                    subsystem.control_handler.scripts.clear();
+                    subsystem.control_handler.scripts = self.control_handler.scripts.clone();
+                }
+
+                for subsystem in &mut self.subsystems {
+                    for generator in &mut subsystem.control_handler.generators {
+                        generator.load();
+                    }
                 }
             }
 
@@ -343,9 +362,19 @@ impl eframe::App for TemplateApp {
                     if !self.lua_scripts.contains(&script) {
                         println!("Loading: {:?}", &script);
 
-                        self.lua_scripts.push(script);
+                        self.lua_scripts.push(script.clone());
 
-                        self.control_handler.generators.push(LuaGenerator::new(self.lua_scripts.last().unwrap()));
+                        self.control_handler.scripts.push(script.clone());
+
+                        for subsystem in &mut self.subsystems {
+                            subsystem.control_handler.scripts.push(script.clone());
+                        }
+
+                        for subsystem in &mut self.subsystems {
+                            for generator in &mut subsystem.control_handler.generators {
+                                generator.load();
+                            }
+                        }
                     }
                 }
             }
@@ -376,10 +405,12 @@ impl eframe::App for TemplateApp {
                         });
 
                     if ui.button("Add subsystem").clicked() {
-                        self.subsystems.push(Subsystem::new(
+                        let mut subsystem = Subsystem::new(
                             format!("Subsystem_{}", self.subsystems.len() as i32 + 1),
                             false,
-                        ));
+                        );
+                        subsystem.control_handler.scripts = self.control_handler.scripts.clone();
+                        self.subsystems.push(subsystem);
                         self.selected_subsystem = self.subsystems.len();
                     }
                 });

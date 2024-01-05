@@ -174,19 +174,20 @@ function generate_normal_loop()
                 end
                 if isAxis(_G["DCM_Keybind" .. i].text) then
                     string = string .. "if (gamepad1." .. keybind.text .. " > 0) {\n"
-                    string = string .. "\t" .. DCM_Name.text .. ".setPower(gamepad1." .. position.value .. ");\n"
+                    string = string .. "\t" .. DCM_Name.text .. ".setPower(" ..  position.value .. ");\n"
                     string = string .. "}\n"
                 end
             end
         end
     else
         keybind = DCM_Keybind
+
         if isButton(keybind.text) then
             string = string .. "if (gamepad1." .. keybind.text .. ") {\n"
-            string = string .. "\t" .. DCM_Name.text .. ".setPower(" .. DCM_MaxPower.value .. ");\n"
+            string = string .. "\t" .. DCM_Name.text .. ".setPower(" .. DCM_MaxPower.text .. ");\n"
             string = string .. "}\n"
         else
-            string = string .. DCM_Name.text .. ".setPower(gamepad1." .. keybind.text .. " * " .. DCM_MaxPower.value .. ");\n"
+            string = string .. DCM_Name.text .. ".setPower(gamepad1." .. keybind.text .. " * " .. DCM_MaxPower.text .. ");\n"
         end
     end
     return string

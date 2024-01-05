@@ -53,6 +53,9 @@ impl UserData for Control {
                 Control::ComboBoxType(c) => {
                     Ok(c.value.to_string())
                 }
+                Control::SliderType(s) => {
+                    Ok(s.value.to_string())
+                }
                 _ => {
                     Ok("".to_string())
                 }

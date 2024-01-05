@@ -1,3 +1,4 @@
+use egui::plot::PlotPoints::Generator;
 use crate::app::generators::{
     generator::{self, SubsystemGenerator},
     motors::motor::MotorGenerator,
@@ -5,9 +6,10 @@ use crate::app::generators::{
 };
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
+use crate::app::generators::lua_generator::{ControlHandler, LuaGenerator};
 
 #[derive(
-    Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, EnumIter, PartialOrd, Copy,
+Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, EnumIter, PartialOrd, Copy,
 )]
 pub enum DrivetrainType {
     Mecanum,
@@ -15,7 +17,7 @@ pub enum DrivetrainType {
     Tank,
 }
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Subsystem<
     T: MotorGenerator + PartialEq + PartialOrd + Clone,
     U: ServoGenerator + PartialEq + PartialOrd + Clone,
@@ -26,12 +28,15 @@ pub struct Subsystem<
     pub drivetrain_type: DrivetrainType,
     pub invert_steering: bool,
     pub name: String,
+    //pub(crate) generators: Vec<LuaGenerator>,
+    pub control_handler: ControlHandler,
+    pub selected_control: String,
 }
 
 impl<
-        T: MotorGenerator + PartialEq + PartialOrd + Clone,
-        U: ServoGenerator + PartialEq + PartialOrd + Clone,
-    > generator::Generator for Subsystem<T, U>
+    T: MotorGenerator + PartialEq + PartialOrd + Clone,
+    U: ServoGenerator + PartialEq + PartialOrd + Clone,
+> generator::Generator for Subsystem<T, U>
 {
     fn generate_includes(&self) -> String {
         let mut code: String = "".to_owned();
@@ -41,6 +46,9 @@ impl<
         if self.servos.len() > 0 as usize {
             code += &self.servos.iter().nth(0).unwrap().generate_includes();
         }
+
+        code += &*self.control_handler.generate_includes().to_string();
+
         code
     }
 
@@ -58,6 +66,9 @@ impl<
                 code += &servos.generate_globals();
             });
         }
+
+        code += &*self.control_handler.generate_globals().to_string();
+
         code
     }
 
@@ -75,6 +86,9 @@ impl<
                 code += &servos.generate_init();
             });
         }
+
+        code += &*self.control_handler.generate_init().to_string();
+
         code
     }
 
@@ -83,20 +97,18 @@ impl<
         if self.is_drivetrain {
             match self.drivetrain_type {
                 DrivetrainType::Mecanum => {
-                    code += &format!("\t\t\t// Mecanum drivetrain one time setup\n\t\t\tdouble drive  = gamepad1.left_stick_y;  // forwards and backwards movement\n\
-            \t\t\tdouble turn   = gamepad1.right_stick_x; // rotation\n");
+                    code += &"\t\t\t// Mecanum drivetrain one time setup\n\t\t\tdouble drive  = gamepad1.left_stick_y;  // forwards and backwards movement\n\
+            \t\t\tdouble turn   = gamepad1.right_stick_x; // rotation\n".to_string();
 
-                    code += &format!(
-                        "\t\t\tdouble strafe = gamepad1.left_stick_x;  // side to side movement\n"
-                    );
+                    code += &"\t\t\tdouble strafe = gamepad1.left_stick_x;  // side to side movement\n".to_string();
                 }
                 DrivetrainType::Arcade => {
-                    code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble drive  = gamepad1.left_stick_y;  // forwards and backwards movement\n\
-                    \t\t\tdouble turn   = gamepad1.right_stick_x; // rotation\n");
+                    code += &"\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble drive  = gamepad1.left_stick_y;  // forwards and backwards movement\n\
+                    \t\t\tdouble turn   = gamepad1.right_stick_x; // rotation\n".to_string();
                 }
                 DrivetrainType::Tank => {
-                    code += &format!("\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble driveLeft  = gamepad1.left_stick_y;  // left motors movement\n\
-                    \t\t\tdouble driveRight = gamepad1.right_stick_y; // right motors movement\n");
+                    code += &"\t\t\t// Arcade drivetrain one time setup\n\t\t\tdouble driveLeft  = gamepad1.left_stick_y;  // left motors movement\n\
+                    \t\t\tdouble driveRight = gamepad1.right_stick_y; // right motors movement\n".to_string();
                 }
             }
 
@@ -123,23 +135,28 @@ impl<
             });
         }
 
+        code += &*self.control_handler.generate_loop_one_time_setup().to_string();
+
         code
     }
 
     fn generate_loop(&self) -> String {
         let mut code = "".to_string();
 
-        if self.motors.len() > 0 as usize {
-            self.motors.iter().for_each(|motor| {
+        /*if self.motors.len() > 0usize {
+            self.motors.iter_mut().for_each(|mut motor| {
                 code += &motor.generate_loop();
             });
-        }
+        }*/
 
-        if self.servos.len() > 0 as usize {
+        if self.servos.len() > 0usize {
             self.servos.iter().for_each(|servos| {
                 code += &servos.generate_loop();
             });
         }
+
+        code += &*self.control_handler.generate_loop().to_string();
+
         code
     }
 
@@ -148,6 +165,27 @@ impl<
             .auto_shrink([false; 2])
             .show(ui, |ui| {
                 ui.add_space(20.0);
+
+                egui::ComboBox::new(format!("{}.{}", self.name, "Controls"), "Controls List")
+                    .selected_text(format!("{}", &mut self.selected_control))
+                    .width(170.0)
+                    .show_ui(ui, |ui| {
+                        for script in &self.control_handler.scripts {
+                            ui.selectable_value(
+                                &mut self.selected_control,
+                                script.clone(),
+                                format!("{:?}", script),
+                            );
+                        }
+                    });
+
+                if ui.button("Add selected control").clicked() {
+                    let mut new_generator = LuaGenerator::new(&self.selected_control);
+                    new_generator.load();
+                    self.control_handler.generators.push(new_generator);
+                }
+
+                self.control_handler.render(ui);
 
                 if self.is_drivetrain {
                     egui::ComboBox::from_label("Drivetrain type")
@@ -259,9 +297,9 @@ impl<
 }
 
 impl<
-        T: MotorGenerator + PartialEq + PartialOrd + Clone,
-        U: ServoGenerator + PartialEq + PartialOrd + Clone,
-    > SubsystemGenerator for Subsystem<T, U>
+    T: MotorGenerator + PartialEq + PartialOrd + Clone,
+    U: ServoGenerator + PartialEq + PartialOrd + Clone,
+> SubsystemGenerator for Subsystem<T, U>
 {
     fn get_name(&self) -> String {
         self.name.to_string()
@@ -269,9 +307,9 @@ impl<
 }
 
 impl<
-        T: MotorGenerator + PartialEq + PartialOrd + Clone,
-        U: ServoGenerator + PartialEq + PartialOrd + Clone,
-    > Subsystem<T, U>
+    T: MotorGenerator + PartialEq + PartialOrd + Clone,
+    U: ServoGenerator + PartialEq + PartialOrd + Clone,
+> Subsystem<T, U>
 {
     pub fn new(name: String, is_drivetrain: bool) -> Self {
         Subsystem {
@@ -284,6 +322,8 @@ impl<
             is_drivetrain,
             invert_steering: false,
             name: name.to_string(),
+            control_handler: ControlHandler { scripts: vec![], generators: vec![] },
+            selected_control: "".to_string(),
         }
     }
 }
