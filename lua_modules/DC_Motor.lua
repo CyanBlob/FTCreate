@@ -190,6 +190,7 @@ function generate_init()
         else
             string = string .. DCM_Name.text .. '.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODERS);\n'
         end
+        string = string .. "\n"
     end
     return string
 end
@@ -271,11 +272,11 @@ function generate_normal_loop()
                         default_string = default_string .. "// Default case; what happens when no button is pressed\n"
                         default_string = default_string .. "else {\n"
                         default_string = default_string ..
-                            "\t" .. DCM_Name.text .. ".setTargetPosition(" .. position.value .. ");\n"
+                            "\t" .. DCM_Name.text .. ".setTargetPosition(" .. position.text .. ");\n"
                         default_string = default_string ..
                             "\t" .. DCM_Name.text .. ".setMode(DcMotor.RUN_TO_POSITION);\n"
                         default_string = default_string ..
-                            "\t" .. DCM_Name.text .. ".setVelocity(" .. DCM_MaxSpeed.value .. ");\n"
+                            "\t" .. DCM_Name.text .. ".setVelocity(" .. DCM_MaxSpeed.text .. ");\n"
                         default_string = default_string .. "}\n"
                     else
                         if added_first == false then
@@ -284,9 +285,9 @@ function generate_normal_loop()
                         else
                             string = string .. "else if (gamepad1." .. keybind.text .. ") {\n"
                         end
-                        string = string .. "\t" .. DCM_Name.text .. ".setTargetPosition(" .. position.value .. ");\n"
+                        string = string .. "\t" .. DCM_Name.text .. ".setTargetPosition(" .. position.text .. ");\n"
                         string = string .. "\t" .. DCM_Name.text .. ".setMode(DcMotor.RUN_TO_POSITION);\n"
-                        string = string .. "\t" .. DCM_Name.text .. ".setVelocity(" .. DCM_MaxSpeed.value .. ");\n"
+                        string = string .. "\t" .. DCM_Name.text .. ".setVelocity(" .. DCM_MaxSpeed.text .. ");\n"
                         string = string .. "}\n"
                     end
                 end

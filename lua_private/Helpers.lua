@@ -159,7 +159,7 @@ function slider(name, label, min, max, default, step, decimals)
             _G[name].value, step, decimals)
     else
         return pack("Slider", name, label, min, max,
-            default, step, default)
+            default, step, decimals)
     end
 end
 

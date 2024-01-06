@@ -3,9 +3,6 @@ use crate::app::generators::generator::Generator;
 
 pub mod generators;
 
-use generators::motors::dc_motor::DcMotor;
-use generators::servos::rev_servo::RevServo;
-
 use self::generators::generator::SubsystemGenerator;
 use self::generators::subsystem::subsystem::Subsystem;
 use self::theme::Theme;
@@ -34,8 +31,8 @@ pub struct TemplateApp {
     label: String,
     file_name: String,
 
-    drivetrain: Subsystem<DcMotor, RevServo>,
-    subsystems: Vec<Subsystem<DcMotor, RevServo>>,
+    drivetrain: Subsystem,
+    subsystems: Vec<Subsystem>,
     code: String,
 
     #[serde(skip)]
@@ -85,7 +82,7 @@ impl Default for TemplateApp {
         Self {
             label: "FTCreate".to_owned(),
             file_name: "FTCreate".to_owned(),
-            drivetrain: Subsystem::new("Drivetrain".to_owned(), true),
+            drivetrain: Subsystem::new("Drivetrain".to_owned()),
             subsystems: vec![],
             code: "".to_string(),
             selected_subsystem: 0,
@@ -121,14 +118,6 @@ impl TemplateApp {
             for generator in &mut obj.control_handler.generators {
                 generator.load();
             }
-
-            for subsystem in &mut obj.subsystems {
-                for generator in &mut subsystem.control_handler.generators {
-                    generator.load();
-                }
-            }
-
-            return obj;
         }
 
         let mut obj: TemplateApp = Default::default();
@@ -164,6 +153,8 @@ impl TemplateApp {
             includes += &subsystem.generate_includes().to_string();
         });
 
+        includes = includes.to_string().split("\n").map(|line| { format!("\n{}", line) }).collect::<String>();
+
         let mut lua_includes = self.control_handler.generate_includes();
         lua_includes = lua_includes.to_string().split("\n").map(|line| { format!("\n{}", line) }).collect::<String>();
         includes += &lua_includes;
@@ -187,63 +178,73 @@ impl TemplateApp {
         new_code += "\n";
         new_code += &format!(
             "public class {} extends LinearOpMode {{\n\
-                \n\tprivate ElapsedTime runtime = new ElapsedTime();\n\n",
+                \n\tprivate ElapsedTime runtime = new ElapsedTime();\n",
             &self.file_name
         );
 
         // global variables
-        new_code += &self.drivetrain.generate_globals();
+        let mut globals = self.drivetrain.generate_globals();
 
         self.subsystems.iter().for_each(|subsystem| {
-            new_code += &subsystem.generate_globals();
+            globals += &subsystem.generate_globals();
         });
+
+        globals = globals.to_string().split("\n").map(|line| { format!("\n\t{}", line) }).collect::<String>();
+        new_code += &globals;
 
         let mut lua_globals = self.control_handler.generate_globals();
         lua_globals = lua_globals.to_string().split("\n").map(|line| { format!("\n\t{}", line) }).collect::<String>();
         new_code += &lua_globals;
 
-        new_code += "\n\t@Override\n\
+        new_code += "@Override\n\
         \tpublic void runOpMode() {\n\n\
             \t\ttelemetry.addData(\"Status\", \"Initialized\");\n\
             \t\ttelemetry.update();";
         new_code += "\n\n";
 
         // initializers
-        new_code += &self.drivetrain.generate_init();
+        let mut init = self.drivetrain.generate_init();
 
         self.subsystems.iter().for_each(|subsystem| {
-            new_code += &subsystem.generate_init();
+            init += &subsystem.generate_init();
         });
+
+        init = init.to_string().split("\n").map(|line| { format!("\n\t\t{}", line) }).collect::<String>();
+        new_code += &init;
 
         let mut lua_init = self.control_handler.generate_init();
         lua_init = lua_init.to_string().split("\n").map(|line| { format!("\n\t\t{}", line) }).collect::<String>();
         new_code += &lua_init;
 
-        new_code += "\n\t\twaitForStart();\n\n\
+        new_code += "waitForStart();\n\n\
             \t\t// Reset the timer (stopwatch) because we only care about time since the game\n\
             \t\t// actually starts\n\
             \t\truntime.reset();\n\n\
-            \t\twhile (opModeIsActive()) {\n\n";
+            \t\twhile (opModeIsActive()) {";
 
         // loop one-time setup
-        new_code += &self.drivetrain.generate_loop_one_time_setup();
+        let mut loop_1x = self.drivetrain.generate_loop_one_time_setup();
 
         self.subsystems.iter().for_each(|subsystem| {
-            new_code += &subsystem.generate_loop_one_time_setup();
+            loop_1x += &subsystem.generate_loop_one_time_setup();
         });
+
+        loop_1x = loop_1x.to_string().split("\n").map(|line| { format!("\n\t\t\t{}", line) }).collect::<String>();
+        new_code += &loop_1x;
 
         let mut lua_one_time_setup = self.control_handler.generate_loop_one_time_setup();
         lua_one_time_setup = lua_one_time_setup.to_string().split("\n").map(|line| { format!("\n\t\t\t{}", line) }).collect::<String>();
         new_code += &lua_one_time_setup;
 
-        new_code += "\n";
-
         // loop
-        new_code += &self.drivetrain.generate_loop();
+        let mut _loop = self.drivetrain.generate_loop();
 
         self.subsystems.iter_mut().for_each(|subsystem| {
-            new_code += &subsystem.generate_loop();
+            _loop += &subsystem.generate_loop();
         });
+
+        _loop = _loop.to_string().split("\n").map(|line| { format!("\n\t\t\t{}", line) }).collect::<String>();
+        new_code += &_loop;
 
         let mut lua_loop = self.control_handler.generate_loop();
         lua_loop = lua_loop.to_string().split("\n").map(|line| { format!("\n\t\t\t{}", line) }).collect::<String>();
@@ -342,17 +343,21 @@ impl eframe::App for TemplateApp {
                     self.control_handler.scripts.push(script.clone());
                 }
 
+                self.drivetrain.control_handler.generators.clear();
+                self.drivetrain.control_handler.scripts.clear();
+                self.drivetrain.control_handler.scripts = self.control_handler.scripts.clone();
+
                 for subsystem in &mut self.subsystems {
                     subsystem.control_handler.generators.clear();
                     subsystem.control_handler.scripts.clear();
                     subsystem.control_handler.scripts = self.control_handler.scripts.clone();
                 }
 
-                for subsystem in &mut self.subsystems {
+                /*for subsystem in &mut self.subsystems {
                     for generator in &mut subsystem.control_handler.generators {
                         generator.load();
                     }
-                }
+                }*/
             }
 
             if ui.button("Load new lua modules").clicked() {
@@ -367,15 +372,17 @@ impl eframe::App for TemplateApp {
 
                         self.control_handler.scripts.push(script.clone());
 
+                        self.drivetrain.control_handler.scripts.push(script.clone());
+
                         for subsystem in &mut self.subsystems {
                             subsystem.control_handler.scripts.push(script.clone());
                         }
 
-                        for subsystem in &mut self.subsystems {
+                        /*for subsystem in &mut self.subsystems {
                             for generator in &mut subsystem.control_handler.generators {
                                 generator.load();
                             }
-                        }
+                        }*/
                     }
                 }
             }
@@ -408,7 +415,6 @@ impl eframe::App for TemplateApp {
                     if ui.button("Add subsystem").clicked() {
                         let mut subsystem = Subsystem::new(
                             format!("Subsystem_{}", self.subsystems.len() as i32 + 1),
-                            false,
                         );
                         subsystem.control_handler.scripts = self.control_handler.scripts.clone();
                         self.subsystems.push(subsystem);
