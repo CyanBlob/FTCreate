@@ -43,10 +43,10 @@ function get_controls()
             controls[index] = spacer()
             index = index + 1
 
-            controls[index] = slider("DCM_Position" .. i, "Position: " .. i, 0, 20000, 0, 1, 0)
+            controls[index] = slider("DCM_Position" .. i, "Position: " .. i, -20000, 20000, 0, 1, 0)
             index = index + 1
 
-            controls[index] = keybindingComboBox("DCM_Keybind" .. i, "Keybinding", "default_button")
+            controls[index] = keybindingComboBox("DCM_Keybind" .. i, "Keybinding", "none")
             index = index + 1
 
             controls[index] = spacer()
@@ -59,7 +59,7 @@ function get_controls()
     elseif is_drivetrain_motor == 0 then -- normal run mode (when not set as a drivetrain motor)
         controls[index] = spacer()
         index = index + 1
-        controls[index] = keybindingComboBox("DCM_Keybind", "Keybinding", "default_button")
+        controls[index] = keybindingComboBox("DCM_Keybind", "Keybinding", "none")
         index = index + 1
         controls[index] = spacer()
         index = index + 1
@@ -212,34 +212,42 @@ end
 function generate_drivetrain_loop()
     string = ""
     if exists(DCM_MaxPower) then
-    	power = DCM_MaxPower.text
+        power = DCM_MaxPower.text
     end
     if drivetrain_type == "Mecanum" then
         if exists(DCM_MecanumPosition) then
             if DCM_MecanumPosition.text == "Front Left" then
-                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive - strafe + turn, -" .. power .. ", " .. power .. "));\n"
+                string = string ..
+                    DCM_Name.text .. ".setPower(Range.clip(drive - strafe + turn, -" .. power .. ", " .. power .. "));\n"
             elseif DCM_MecanumPosition.text == "Front Right" then
-                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive + strafe - turn, -" .. power .. ", " .. power .. "));\n"
+                string = string ..
+                    DCM_Name.text .. ".setPower(Range.clip(drive + strafe - turn, -" .. power .. ", " .. power .. "));\n"
             elseif DCM_MecanumPosition.text == "Rear Left" then
-                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive + strafe + turn, -" .. power .. ", " .. power .. "));\n"
+                string = string ..
+                    DCM_Name.text .. ".setPower(Range.clip(drive + strafe + turn, -" .. power .. ", " .. power .. "));\n"
             elseif DCM_MecanumPosition.text == "Rear Right" then
-                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive - strafe - turn, -" .. power .. ", " .. power .. "));\n"
+                string = string ..
+                    DCM_Name.text .. ".setPower(Range.clip(drive - strafe - turn, -" .. power .. ", " .. power .. "));\n"
             end
         end
     elseif drivetrain_type == "Arcade" then
         if exists(DCM_ArcadePosition) then
             if DCM_ArcadePosition.text == "Left" then
-                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive + turn, -" .. power .. ", " .. power .. "));\n"
+                string = string ..
+                    DCM_Name.text .. ".setPower(Range.clip(drive + turn, -" .. power .. ", " .. power .. "));\n"
             elseif DCM_ArcadePosition.text == "Right" then
-                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive - turn, -" .. power .. ", " .. power .. "));\n"
+                string = string ..
+                    DCM_Name.text .. ".setPower(Range.clip(drive - turn, -" .. power .. ", " .. power .. "));\n"
             end
         end
     elseif drivetrain_type == "Tank" then
         if exists(DCM_TankPosition) then
             if DCM_TankPosition.text == "Left" then
-                string = string .. DCM_Name.text .. ".setPower(Range.clip(driveLeft, -" .. power .. ", " .. power .. "));\n"
+                string = string ..
+                    DCM_Name.text .. ".setPower(Range.clip(driveLeft, -" .. power .. ", " .. power .. "));\n"
             elseif DCM_TankPosition.text == "Right" then
-                string = string .. DCM_Name.text .. ".setPower(Range.clip(driveRight, -" .. power .. ", " .. power .. "));\n"
+                string = string ..
+                    DCM_Name.text .. ".setPower(Range.clip(driveRight, -" .. power .. ", " .. power .. "));\n"
             end
         end
     end
@@ -251,33 +259,54 @@ function generate_normal_loop()
         return ""
     end
     string = ""
+    default_string = ""
+    added_first = false
     if run_mode == "Run to position" then
         for i = 1, num_positions, 1 do
             position = _G["DCM_Position" .. i]
             if exists(position) then
                 keybind = _G["DCM_Keybind" .. i]
                 if isButton(keybind.text) then
-                    string = string .. "if (gamepad1." .. keybind.text .. ") {\n"
-                    string = string .. "\t" .. DCM_Name.text .. ".setTargetPosition(" .. position.value .. ");\n"
-                    string = string .. "\t" .. DCM_Name.text .. ".setMode(DcMotor.RUN_TO_POSITION);\n"
-                    string = string .. "\t" .. DCM_Name.text .. ".setVelocity(" .. DCM_MaxSpeed.value .. ");\n"
-                    string = string .. "}\n"
+                    if keybind.text == "default_button" then -- This has to come last in the generated code, so save it and add it later
+                        default_string = default_string .. "// Default case; what happens when no button is pressed\n"
+                        default_string = default_string .. "else {\n"
+                        default_string = default_string ..
+                            "\t" .. DCM_Name.text .. ".setTargetPosition(" .. position.value .. ");\n"
+                        default_string = default_string ..
+                            "\t" .. DCM_Name.text .. ".setMode(DcMotor.RUN_TO_POSITION);\n"
+                        default_string = default_string ..
+                            "\t" .. DCM_Name.text .. ".setVelocity(" .. DCM_MaxSpeed.value .. ");\n"
+                        default_string = default_string .. "}\n"
+                    else
+                        if added_first == false then
+                            string = string .. "if (gamepad1." .. keybind.text .. ") {\n"
+                            added_first = true
+                        else
+                            string = string .. "else if (gamepad1." .. keybind.text .. ") {\n"
+                        end
+                        string = string .. "\t" .. DCM_Name.text .. ".setTargetPosition(" .. position.value .. ");\n"
+                        string = string .. "\t" .. DCM_Name.text .. ".setMode(DcMotor.RUN_TO_POSITION);\n"
+                        string = string .. "\t" .. DCM_Name.text .. ".setVelocity(" .. DCM_MaxSpeed.value .. ");\n"
+                        string = string .. "}\n"
+                    end
                 end
-                if isAxis(_G["DCM_Keybind" .. i].text) then
+                if isAxis(_G["DCM_Keybind" .. i].text) then -- This is in "run to position" mode so we just set the target position if the axis is pushed at all
+                    -- TODO: Add a "scaled position" control where we set "Position * axis value)
                     string = string .. "if (gamepad1." .. keybind.text .. " > 0) {\n"
                     string = string .. "\t" .. DCM_Name.text .. ".setPower(" .. position.value .. ");\n"
                     string = string .. "}\n"
                 end
             end
         end
-    else
+        string = string .. default_string
+    else -- Run with/without encoders
         keybind = DCM_Keybind
 
         if isButton(keybind.text) then
             string = string .. "if (gamepad1." .. keybind.text .. ") {\n"
             string = string .. "\t" .. DCM_Name.text .. ".setPower(" .. DCM_MaxPower.text .. ");\n"
             string = string .. "}\n"
-        else
+        elseif isAxis(keybind.text) then
             string = string ..
                 DCM_Name.text .. ".setPower(gamepad1." .. keybind.text .. " * " .. DCM_MaxPower.text .. ");\n"
         end

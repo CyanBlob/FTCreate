@@ -102,6 +102,7 @@ end
 function keybindingComboBox(name, label, default)
     if exists(_G[name]) then
         return pack("ComboBox", name, label, _G[name].text,
+            "none",
             "default_button",
             "a",
             "b",
@@ -117,7 +118,6 @@ function keybindingComboBox(name, label, default)
             "dpad_down",
             "start",
             "select",
-            "default_axis",
             "left_trigger",
             "right_trigger",
             "left_stick_x",
@@ -127,6 +127,7 @@ function keybindingComboBox(name, label, default)
         )
     else
         return pack("ComboBox", name, label, default,
+            "none",
             "default_button",
             "a",
             "b",
@@ -142,7 +143,6 @@ function keybindingComboBox(name, label, default)
             "dpad_down",
             "start",
             "select",
-            "default_axis",
             "left_trigger",
             "right_trigger",
             "left_stick_x",
