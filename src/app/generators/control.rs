@@ -42,6 +42,23 @@ impl UserData for Control {
             };
         });
 
+        fields.add_field_method_set("value", |_, this, val: f32| {
+            match this {
+                Control::SliderType(s) => {
+                    s.value = val;
+                },
+                Control::CheckboxType(c) => {
+                    match val {
+                        v if v > 0.0 => { c.value = true}
+                        v if v == 0.0 => { c.value = false}
+                        _ => {}
+                    }
+                }
+                _ => {}
+            }
+            Ok(())
+        });
+
         fields.add_field_method_get("text", |_, this| {
             return match this {
                 Control::Label(l) => {
@@ -60,6 +77,19 @@ impl UserData for Control {
                     Ok("".to_string())
                 }
             };
+        });
+
+        fields.add_field_method_set("text", |_, this, val: String| {
+            match this {
+                Control::ComboBoxType(c) => {
+                    c.value = val;
+                }
+                Control::TextInputType(t) => {
+                    t.value = val;
+                }
+                _ => {}
+            }
+            Ok(())
         });
     }
 }

@@ -1,4 +1,3 @@
-use egui::plot::PlotPoints::Generator;
 use crate::app::generators::{
     generator::{self, SubsystemGenerator},
     motors::motor::MotorGenerator,
@@ -28,7 +27,6 @@ pub struct Subsystem<
     pub drivetrain_type: DrivetrainType,
     pub invert_steering: bool,
     pub name: String,
-    //pub(crate) generators: Vec<LuaGenerator>,
     pub control_handler: ControlHandler,
     pub selected_control: String,
 }
@@ -40,10 +38,10 @@ impl<
 {
     fn generate_includes(&self) -> String {
         let mut code: String = "".to_owned();
-        if self.motors.len() > 0 as usize {
+        if self.motors.len() > 0usize {
             code += &self.motors.iter().nth(0).unwrap().generate_includes();
         }
-        if self.servos.len() > 0 as usize {
+        if self.servos.len() > 0usize {
             code += &self.servos.iter().nth(0).unwrap().generate_includes();
         }
 
@@ -55,13 +53,13 @@ impl<
     fn generate_globals(&self) -> String {
         let mut code = "".to_string();
 
-        if self.motors.len() > 0 as usize {
+        if self.motors.len() > 0usize {
             self.motors.iter().for_each(|motor| {
                 code += &motor.generate_globals();
             });
         }
 
-        if self.servos.len() > 0 as usize {
+        if self.servos.len() > 0usize {
             self.servos.iter().for_each(|servos| {
                 code += &servos.generate_globals();
             });
@@ -75,13 +73,13 @@ impl<
     fn generate_init(&self) -> String {
         let mut code = "".to_string();
 
-        if self.motors.len() > 0 as usize {
+        if self.motors.len() > 0usize {
             self.motors.iter().for_each(|motor| {
                 code += &motor.generate_init();
             });
         }
 
-        if self.servos.len() > 0 as usize {
+        if self.servos.len() > 0usize {
             self.servos.iter().for_each(|servos| {
                 code += &servos.generate_init();
             });
@@ -123,11 +121,11 @@ impl<
             code += "\n";
         }
 
-        if self.motors.len() > 0 as usize {
+        /*if self.motors.len() > 0 as usize {
             self.motors.iter().for_each(|motor| {
                 code += &motor.generate_loop_one_time_setup();
             });
-        }
+        }*/
 
         if self.servos.len() > 0 as usize {
             self.servos.iter().for_each(|servos| {
@@ -144,7 +142,7 @@ impl<
         let mut code = "".to_string();
 
         /*if self.motors.len() > 0usize {
-            self.motors.iter_mut().for_each(|mut motor| {
+            self.motors.iter().for_each(|motor| {
                 code += &motor.generate_loop();
             });
         }*/
@@ -171,10 +169,11 @@ impl<
                     .width(170.0)
                     .show_ui(ui, |ui| {
                         for script in &self.control_handler.scripts {
+                            let script_name = script.split("/").last().unwrap().split(".").nth(0).unwrap();
                             ui.selectable_value(
                                 &mut self.selected_control,
                                 script.clone(),
-                                format!("{:?}", script),
+                                format!("{:?}", script_name),
                             );
                         }
                     });
@@ -225,9 +224,9 @@ impl<
                 ui.add_space(30.0);
 
                 ui.horizontal(|ui| {
-                    ui.heading("Motors");
+                    //ui.heading("Motors");
 
-                    if ui.button("Add motor").clicked() {
+                    /*if ui.button("Add motor").clicked() {
                         self.motors.push(T::new(format!(
                             "{}_motor_{}",
                             self.name,
@@ -237,7 +236,7 @@ impl<
 
                     if ui.button("Remove motor").clicked() {
                         self.motors.pop();
-                    }
+                    }*/
                 });
 
                 ui.add_space(10.0);

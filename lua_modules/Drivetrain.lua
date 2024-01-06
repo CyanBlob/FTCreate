@@ -46,10 +46,6 @@ function generate_includes()
 end
 
 function generate_loop_one_time_setup()
-    return ""
-end
-
-function generate_loop()
     string = ""
     if exists(DCM_DrivetrainType) then
         if DCM_DrivetrainType.text == "Mecanum" then
@@ -68,4 +64,8 @@ function generate_loop()
         end
     end
     return string
+end
+
+function generate_loop()
+    return ""
 end

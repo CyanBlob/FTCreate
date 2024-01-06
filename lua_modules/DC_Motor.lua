@@ -4,6 +4,8 @@ controlsChanged = true
 
 run_mode = "Run using encoders"
 num_positions = 0
+is_drivetrain_motor = 0
+drivetrain_type = ""
 
 function get_controls()
     controls = {}
@@ -22,9 +24,14 @@ function get_controls()
     controls[index] = textInput("DCM_Name", "DC Motor", "DC_Motor")
     index = index + 1
 
-    controls[index] = comboBox("DCM_RunMode", "Run Mode", "Run using encoders", "Run using encoders",
-        "Run without encoders",
-        "Run to position")
+    if is_drivetrain_motor == 1 then
+        controls[index] = comboBox("DCM_RunMode", "Run Mode", "Run using encoders", "Run using encoders",
+            "Run without encoders")
+    else
+        controls[index] = comboBox("DCM_RunMode", "Run Mode", "Run using encoders", "Run using encoders",
+            "Run without encoders",
+            "Run to position")
+    end
     index = index + 1
 
     -- fixed positons
@@ -49,11 +56,40 @@ function get_controls()
         end
         controls[index] = spacer()
         index = index + 1
-    else -- normal run mode
+    elseif is_drivetrain_motor == 0 then -- normal run mode (when not set as a drivetrain motor)
         controls[index] = spacer()
         index = index + 1
         controls[index] = keybindingComboBox("DCM_Keybind", "Keybinding", "default_button")
         index = index + 1
+        controls[index] = spacer()
+        index = index + 1
+        controls[index] = separator()
+        index = index + 1
+    else -- drivetrain
+        controls[index] = spacer()
+        index = index + 1
+
+        controls[index] = comboBox("DCM_DrivetrainType", "Drivetrain Type", "Mecanum", "Mecanum", "Arcade", "Tank")
+        index = index + 1
+    end
+
+    if is_drivetrain_motor == 1 then
+        if drivetrain_type == "Mecanum" then
+            controls[index] = comboBox("DCM_MecanumPosition", "Mecanum Position", "Front Left", "Front Left",
+                "Front Right", "Rear Left", "Rear Right")
+            index = index + 1
+        end
+        if drivetrain_type == "Arcade" then
+            controls[index] = comboBox("DCM_ArcadePosition", "Arcade Position", "Left",
+                "Left", "Right")
+            index = index + 1
+        end
+        if drivetrain_type == "Tank" then
+            controls[index] = comboBox("DCM_TankPosition", "Tank Position", "Left",
+                "Left", "Right")
+            index = index + 1
+        end
+
         controls[index] = spacer()
         index = index + 1
         controls[index] = separator()
@@ -87,6 +123,25 @@ function tick()
     if exists(DCM_NumPositions) then
         if DCM_NumPositions.value ~= num_positions then
             num_positions = DCM_NumPositions.value
+            controlsChanged = true
+        end
+    end
+    if exists(DCM_IsDrivetrain) then
+        if DCM_IsDrivetrain.value ~= is_drivetrain_motor then
+            is_drivetrain_motor = DCM_IsDrivetrain.value
+            controlsChanged = true
+
+            if exists(DCM_RunMode) then
+                if DCM_RunMode.text == "Run to position" then
+                    DCM_RunMode.text = "Run using encoders"
+                end
+            end
+        end
+    end
+
+    if exists(DCM_DrivetrainType) then
+        if drivetrain_type ~= DCM_DrivetrainType.text then
+            drivetrain_type = DCM_DrivetrainType.text
             controlsChanged = true
         end
     end
@@ -155,10 +210,46 @@ function generate_loop()
 end
 
 function generate_drivetrain_loop()
-    return ""
+    string = ""
+    if exists(DCM_MaxPower) then
+    	power = DCM_MaxPower.text
+    end
+    if drivetrain_type == "Mecanum" then
+        if exists(DCM_MecanumPosition) then
+            if DCM_MecanumPosition.text == "Front Left" then
+                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive - strafe + turn, -" .. power .. ", " .. power .. "));\n"
+            elseif DCM_MecanumPosition.text == "Front Right" then
+                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive + strafe - turn, -" .. power .. ", " .. power .. "));\n"
+            elseif DCM_MecanumPosition.text == "Rear Left" then
+                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive + strafe + turn, -" .. power .. ", " .. power .. "));\n"
+            elseif DCM_MecanumPosition.text == "Rear Right" then
+                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive - strafe - turn, -" .. power .. ", " .. power .. "));\n"
+            end
+        end
+    elseif drivetrain_type == "Arcade" then
+        if exists(DCM_ArcadePosition) then
+            if DCM_ArcadePosition.text == "Left" then
+                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive + turn, -" .. power .. ", " .. power .. "));\n"
+            elseif DCM_ArcadePosition.text == "Right" then
+                string = string .. DCM_Name.text .. ".setPower(Range.clip(drive - turn, -" .. power .. ", " .. power .. "));\n"
+            end
+        end
+    elseif drivetrain_type == "Tank" then
+        if exists(DCM_TankPosition) then
+            if DCM_TankPosition.text == "Left" then
+                string = string .. DCM_Name.text .. ".setPower(Range.clip(driveLeft, -" .. power .. ", " .. power .. "));\n"
+            elseif DCM_TankPosition.text == "Right" then
+                string = string .. DCM_Name.text .. ".setPower(Range.clip(driveRight, -" .. power .. ", " .. power .. "));\n"
+            end
+        end
+    end
+    return string
 end
 
 function generate_normal_loop()
+    if is_drivetrain_motor == 1 then
+        return ""
+    end
     string = ""
     if run_mode == "Run to position" then
         for i = 1, num_positions, 1 do
@@ -174,7 +265,7 @@ function generate_normal_loop()
                 end
                 if isAxis(_G["DCM_Keybind" .. i].text) then
                     string = string .. "if (gamepad1." .. keybind.text .. " > 0) {\n"
-                    string = string .. "\t" .. DCM_Name.text .. ".setPower(" ..  position.value .. ");\n"
+                    string = string .. "\t" .. DCM_Name.text .. ".setPower(" .. position.value .. ");\n"
                     string = string .. "}\n"
                 end
             end
@@ -187,7 +278,8 @@ function generate_normal_loop()
             string = string .. "\t" .. DCM_Name.text .. ".setPower(" .. DCM_MaxPower.text .. ");\n"
             string = string .. "}\n"
         else
-            string = string .. DCM_Name.text .. ".setPower(gamepad1." .. keybind.text .. " * " .. DCM_MaxPower.text .. ");\n"
+            string = string ..
+                DCM_Name.text .. ".setPower(gamepad1." .. keybind.text .. " * " .. DCM_MaxPower.text .. ");\n"
         end
     end
     return string

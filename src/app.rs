@@ -20,7 +20,7 @@ use tokio::sync::{mpsc, mpsc::unbounded_channel};
 use tokio;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::runtime::Runtime;
-use crate::app::generators::lua_generator::{ControlHandler, LuaGenerator};
+use crate::app::generators::lua_generator::{ControlHandler};
 
 pub mod syntax_highlighting;
 

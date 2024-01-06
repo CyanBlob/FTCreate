@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::Read;
-use std::ptr::addr_of_mut;
 use egui::Ui;
 use mlua::{Function, Lua, Table, UserData, UserDataMethods};
+use mlua::prelude::LuaError;
 use crate::app::generators::control::{Control};
 use crate::app::generators::ui_elements::{CheckboxInput, ComboBoxInput, Slider, TextInput};
 
@@ -50,13 +50,13 @@ impl ControlHandler {
         for generator in &mut self.generators {
             let mut new_controls = vec![];
 
-            let get_controls: Function<'_> = generator.lua.globals().get("get_controls").unwrap();
-            let controls_changed: Function<'_> = generator.lua.globals().get("controls_changed").unwrap();
+            let get_controls: Function<'_> = generator.lua.globals().get("get_controls").expect("Lua scripts must contain a 'get_controls' method!");
+            let controls_changed: Function<'_> = generator.lua.globals().get("controls_changed").expect("Lua scripts must contain a 'controls_changed' method!");
 
             let changed = controls_changed.call::<_, bool>(()).unwrap();
 
             if changed == false {
-                // ensure unique IDs for each control
+                // ensure unique IDs for each control. This is needed for repeated ComboBox controls
                 i += 100;
                 continue;
             }
@@ -143,7 +143,6 @@ impl ControlHandler {
                 Ok(())
             }).expect("Failed to parse table");
 
-
             generator.controls.append(&mut new_controls);
         }
     }
@@ -156,8 +155,10 @@ impl ControlHandler {
             for control in &generator.controls {
                 generator.lua.globals().set(control.get_name(), control.clone()).unwrap();
             }
-            let tick: Function<'_> = generator.lua.globals().get("tick").unwrap();
-            tick.call::<_, ()>(()).unwrap();
+            let _ = generator.lua.globals().get("tick").and_then(|tick: Function<'_>| {
+                tick.call::<_, ()>(()).unwrap();
+                Ok(())
+            });
         }
     }
 
@@ -166,7 +167,26 @@ impl ControlHandler {
         let mut removed_generators = vec![];
 
         egui::Grid::new("Controls Grid").show(ui, |ui| {
+            let mut last_generator_type = "".to_string();
+
+            let mut i = 0;
             self.generators.iter_mut().enumerate().for_each(|(id, generator)| {
+                if last_generator_type == "" {
+                    last_generator_type = generator.script.clone();
+                }
+
+                // new control types go to new rows
+                if &last_generator_type != &generator.script {
+                    last_generator_type = generator.script.clone();
+                    i = 0;
+                    ui.end_row();
+                }
+
+                // otherwise two controls per row
+                else if i % 2 == 0 {
+                    ui.end_row();
+                }
+
                 ui.vertical(|ui| {
                     for control in &mut generator.controls {
                         control.render(ui);
@@ -176,12 +196,9 @@ impl ControlHandler {
                     }
                 });
 
-                if id % 2 == 1 {
-                    ui.end_row();
-                }
+                i = i + 1;
             });
         });
-
 
         for generator in removed_generators {
             self.generators.remove(generator);
@@ -192,8 +209,11 @@ impl ControlHandler {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
-            let tick: Function<'_> = generator.lua.globals().get("generate_includes").unwrap();
-            code += &*tick.call::<_, String>(()).unwrap();
+            let func: Result::<Function<'_>, LuaError> = generator.lua.globals().get("generate_includes");
+
+            if let Ok(f) = func {
+                code += &*f.call::<_, String>(()).unwrap();
+            }
         }
         code.to_string()
     }
@@ -202,8 +222,11 @@ impl ControlHandler {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
-            let tick: Function<'_> = generator.lua.globals().get("generate_init").unwrap();
-            code += &*tick.call::<_, String>(()).unwrap();
+            let func: Result::<Function<'_>, LuaError> = generator.lua.globals().get("generate_init");
+
+            if let Ok(f) = func {
+                code += &*f.call::<_, String>(()).unwrap();
+            }
         }
         code.to_string()
     }
@@ -212,17 +235,24 @@ impl ControlHandler {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
-            let tick: Function<'_> = generator.lua.globals().get("generate_globals").unwrap();
-            code += &*tick.call::<_, String>(()).unwrap();
+            let func: Result::<Function<'_>, LuaError> = generator.lua.globals().get("generate_globals");
+
+            if let Ok(f) = func {
+                code += &*f.call::<_, String>(()).unwrap();
+            }
         }
         code.to_string()
     }
+
     pub fn generate_loop_one_time_setup(&self) -> String {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
-            let tick: Function<'_> = generator.lua.globals().get("generate_loop_one_time_setup").unwrap();
-            code += &*tick.call::<_, String>(()).unwrap();
+            let func: Result::<Function<'_>, LuaError> = generator.lua.globals().get("generate_loop_one_time_setup");
+
+            if let Ok(f) = func {
+                code += &*f.call::<_, String>(()).unwrap();
+            }
         }
         code.to_string()
     }
@@ -231,8 +261,11 @@ impl ControlHandler {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
-            let tick: Function<'_> = generator.lua.globals().get("generate_loop").unwrap();
-            code += &*tick.call::<_, String>(()).unwrap();
+            let func: Result::<Function<'_>, LuaError> = generator.lua.globals().get("generate_loop");
+
+            if let Ok(f) = func {
+                code += &*f.call::<_, String>(()).unwrap();
+            }
         }
         code.to_string()
     }
