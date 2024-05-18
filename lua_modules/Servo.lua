@@ -121,14 +121,14 @@ function generate_normal_loop()
                     else
                         string = string .. "else if (gamepad1." .. keybind.text .. " > 0) {\n"
                     end
-                    string = string .. "\t" .. SERVO_Name.text .. ".setPower(" .. position.value .. ");\n"
+                    string = string .. "\t" .. SERVO_Name.text .. ".setPower(" .. position.text .. ");\n"
                     string = string .. "}\n"
                 end
             end
             if isAxis(_G["SERVO_Keybind" .. i].text) then -- This is in "run to position" mode so we just set the target position if the axis is pushed at all
                 -- TODO: Add a "scaled position" control where we set "Position * axis value)
                 string = string .. "if (gamepad1." .. keybind.text .. " > 0) {\n"
-                string = string .. "\t" .. SERVO_Name.text .. ".setPower(" .. position.value .. ");\n"
+                string = string .. "\t" .. SERVO_Name.text .. ".setPower(" .. position.text .. ");\n"
                 string = string .. "}\n"
             end
         end

@@ -1,12 +1,12 @@
 use egui::Ui;
 use mlua::prelude::LuaUserData;
-use mlua::{UserData, UserDataFields};
-use crate::app::generators::ui_elements::{CheckboxInput, ComboBoxInput, Slider, TextInput};
+use mlua::{Lua, UserData, UserDataFields};
+use crate::app::generators::ui_elements::{ButtonInput, CheckboxInput, ComboBoxInput, Slider, TextInput};
 
 pub trait SizedUserData: LuaUserData + Sized {}
 
 pub trait UiElement {
-    fn render(&mut self, ui: &mut Ui);
+    fn render(&mut self, ui: &mut Ui, lua: Option<&Lua>);
 }
 
 #[derive(Clone, Debug)]
@@ -19,6 +19,7 @@ pub enum Control
     ComboBoxType(ComboBoxInput),
     Label(String),
     CheckboxType(CheckboxInput),
+    ButtonType(ButtonInput),
     Separator,
     Spacer,
 }
@@ -96,12 +97,13 @@ impl UserData for Control {
 
 impl Control
 {
-    pub fn render(&mut self, ui: &mut Ui)
+    pub fn render(&mut self, ui: &mut Ui, lua: &Lua)
     {
         match self {
-            Control::SliderType(s) => { s.render(ui); }
-            Control::TextInputType(t) => { t.render(ui); }
-            Control::ComboBoxType(c) => { c.render(ui) }
+            Control::SliderType(s) => { s.render(ui, None); }
+            Control::TextInputType(t) => { t.render(ui, None); }
+            Control::ComboBoxType(c) => { c.render(ui, None) }
+            Control::ButtonType(b) => { b.render(ui, Some(lua)) }
             Control::CheckboxType(b) => {
                 ui.checkbox(&mut b.value, &b.label);
             }
@@ -126,6 +128,7 @@ impl Control
             Control::TextInputType(t) => { t.name.to_string() }
             Control::ComboBoxType(c) => { c.name.to_string() }
             Control::CheckboxType(c) => { c.name.to_string() }
+            Control::ButtonType(b) => { b.name.to_string() }
             _ => { "".to_string() }
         };
     }

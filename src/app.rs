@@ -27,7 +27,6 @@ pub mod theme;
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
-    // Example stuff:
     label: String,
     file_name: String,
 
@@ -113,11 +112,8 @@ impl TemplateApp {
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
         if let Some(storage) = cc.storage {
-            let mut obj: TemplateApp = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
 
-            for generator in &mut obj.control_handler.generators {
-                generator.load();
-            }
         }
 
         let mut obj: TemplateApp = Default::default();
@@ -352,12 +348,6 @@ impl eframe::App for TemplateApp {
                     subsystem.control_handler.scripts.clear();
                     subsystem.control_handler.scripts = self.control_handler.scripts.clone();
                 }
-
-                /*for subsystem in &mut self.subsystems {
-                    for generator in &mut subsystem.control_handler.generators {
-                        generator.load();
-                    }
-                }*/
             }
 
             if ui.button("Load new lua modules").clicked() {
@@ -377,12 +367,6 @@ impl eframe::App for TemplateApp {
                         for subsystem in &mut self.subsystems {
                             subsystem.control_handler.scripts.push(script.clone());
                         }
-
-                        /*for subsystem in &mut self.subsystems {
-                            for generator in &mut subsystem.control_handler.generators {
-                                generator.load();
-                            }
-                        }*/
                     }
                 }
             }

@@ -1,5 +1,6 @@
 use std::ops::RangeInclusive;
 use egui::Ui;
+use mlua::{Function, Lua};
 use crate::app::generators::control::UiElement;
 use crate::app::generators::keybinding::keybinding::Keybinding;
 
@@ -42,8 +43,15 @@ pub struct CheckboxInput {
     pub value: bool,
 }
 
+#[derive(Clone, Debug)]
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct ButtonInput {
+    pub name: String,
+    pub callback: String,
+}
+
 impl UiElement for Slider {
-    fn render(&mut self, ui: &mut Ui) {
+    fn render(&mut self, ui: &mut Ui, lua: Option<&Lua>) {
         ui.add(
             egui::Slider::new(&mut self.value, RangeInclusive::new(self.min, self.max))
                 .text(&self.label)
@@ -55,13 +63,13 @@ impl UiElement for Slider {
 }
 
 impl UiElement for TextInput {
-    fn render(&mut self, ui: &mut Ui) {
+    fn render(&mut self, ui: &mut Ui, lua: Option<&Lua>) {
         ui.text_edit_singleline(&mut self.value);
     }
 }
 
 impl UiElement for ComboBoxInput {
-    fn render(&mut self, ui: &mut Ui) {
+    fn render(&mut self, ui: &mut Ui, lua: Option<&Lua>) {
         egui::ComboBox::new(format!("{}{}{}", &self.name, &self.label, &self.id), &self.label)
             .selected_text(format!("{:?}", &mut self.value))
             .width(170.0)
@@ -70,5 +78,15 @@ impl UiElement for ComboBoxInput {
                     ui.selectable_value(&mut self.value, entry.to_string(), format!("{:?}", entry));
                 }
             });
+    }
+}
+
+impl UiElement for ButtonInput {
+    fn render(&mut self, ui: &mut Ui, lua: Option<&Lua>) {
+        
+        if ui.button(&self.name).clicked() {
+            let callback: Function<'_> = lua.unwrap().globals().get(self.callback.to_owned()).expect("Button callback not found");
+            callback.call::<_, ()>(()).unwrap();
+        }
     }
 }

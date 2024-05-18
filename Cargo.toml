@@ -11,12 +11,12 @@ default = ["syntect"]
 [dependencies]
 serde_json = "1.0.89"
 
-egui = {version = "0.21.0"}
-egui_extras = {version = "0.21.0", features = ["image"]}
+egui = {version = "0.24.0"}
+egui_extras = {version = "0.24.0", features = ["image"]}
 
-tokio = {version = "1.28.2", features = ["sync"]}
+tokio = {version = "1.28.2", features = ["sync", "rt-multi-thread"]}
 
-eframe = { version = "0.21.0", default-features = false, features = [
+eframe = { version = "0.24.0", default-features = false, features = [
     "accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts", # Embed the default egui fonts.
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
@@ -37,12 +37,12 @@ strum_macros = "0.24"
 enum-map = { version = "2", features = ["serde"] }
 tempfile = "3.5.0"
 
-mlua = { version = "0.9.1", features = ["luajit", "vendored"] }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tracing-subscriber = "0.3"
 ftc_http = {git = "https://github.com/CyanBlob/ftc_http", branch = "async"}
+mlua = { version = "0.9.1", features = ["luajit", "vendored"] }
 #ftc_http = { path = "../ftc_http" }
 
 # web:
@@ -50,6 +50,7 @@ ftc_http = {git = "https://github.com/CyanBlob/ftc_http", branch = "async"}
 console_error_panic_hook = "0.1.6"
 tracing-wasm = "0.2"
 wasm-bindgen-futures = "0.4"
+mlua = { version = "0.9.1", features = ["lua54", "vendored"] }
 
 
 [profile.release]

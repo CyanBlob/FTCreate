@@ -34,6 +34,10 @@ function comboBox(name, label, default, ...)
     end
 end
 
+function button(name, callback)
+        return pack("Button", name, callback)
+end
+
 function buttonComboBox(name, label, default)
     if exists(_G[name]) then
         return pack("ComboBox", name, label, _G[name].text,

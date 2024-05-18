@@ -4,7 +4,7 @@ use egui::Ui;
 use mlua::{Function, Lua, Table, UserData, UserDataMethods};
 use mlua::prelude::LuaError;
 use crate::app::generators::control::{Control};
-use crate::app::generators::ui_elements::{CheckboxInput, ComboBoxInput, Slider, TextInput};
+use crate::app::generators::ui_elements::{ButtonInput, CheckboxInput, ComboBoxInput, Slider, TextInput};
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct ControlHandler {
@@ -122,6 +122,13 @@ impl ControlHandler {
                                 });
                                 new_controls.push(control);
                             }
+                            "Button" => {
+                                let control = Control::ButtonType(ButtonInput {
+                                    name: v.raw_get::<i32, String>(2).unwrap(),
+                                    callback: v.raw_get::<i32, String>(3).unwrap(),
+                                });
+                                new_controls.push(control);
+                            }
                             "Label" => {
                                 let control = Control::Label(v.raw_get::<i32, String>(2).unwrap());
                                 new_controls.push(control);
@@ -189,7 +196,7 @@ impl ControlHandler {
 
                 ui.vertical(|ui| {
                     for control in &mut generator.controls {
-                        control.render(ui);
+                        control.render(ui, &generator.lua);
                     }
                     if ui.button("Remove component").clicked() {
                         removed_generators.push(id);

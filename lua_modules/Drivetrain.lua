@@ -1,8 +1,6 @@
 require "lua_private.Helpers"
 
 controlsChanged = true
-
-run_mode = "Run using encoders"
 num_positions = 0
 
 function get_controls()
