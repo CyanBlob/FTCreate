@@ -1,20 +1,19 @@
 use crate::app::generators::generator::Generator;
+use std::fs;
 
 pub mod generators;
-
-use generators::motors::dc_motor::DcMotor;
-use generators::servos::rev_servo::RevServo;
 
 use self::generators::generator::SubsystemGenerator;
 use self::generators::subsystem::subsystem::Subsystem;
 use self::theme::Theme;
 
+use mlua::Lua;
 use std::fs::File;
 use std::io::Write;
-use std::ops::Deref;
 use std::path::PathBuf;
 use tokio::sync::{mpsc, mpsc::unbounded_channel};
 
+use crate::app::generators::lua_generator::ControlHandler;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio;
 #[cfg(not(target_arch = "wasm32"))]
@@ -28,12 +27,11 @@ pub mod theme;
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
-    // Example stuff:
     label: String,
     file_name: String,
 
-    drivetrain: Subsystem<DcMotor, RevServo>,
-    subsystems: Vec<Subsystem<DcMotor, RevServo>>,
+    drivetrain: Subsystem,
+    subsystems: Vec<Subsystem>,
     code: String,
 
     #[serde(skip)]
@@ -49,6 +47,11 @@ pub struct TemplateApp {
     #[serde(skip)]
     #[cfg(not(target_arch = "wasm32"))]
     tokio_runtime: Runtime,
+
+    #[serde(skip)]
+    lua: Lua,
+    control_handler: ControlHandler,
+    lua_scripts: Vec<String>,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
@@ -78,7 +81,7 @@ impl Default for TemplateApp {
         Self {
             label: "FTCreate".to_owned(),
             file_name: "FTCreate".to_owned(),
-            drivetrain: Subsystem::new("Drivetrain".to_owned(), true),
+            drivetrain: Subsystem::new("Drivetrain".to_owned()),
             subsystems: vec![],
             code: "".to_string(),
             selected_subsystem: 0,
@@ -88,6 +91,12 @@ impl Default for TemplateApp {
             last_upload_update: UploadStatus::DISCONNECTED,
             #[cfg(not(target_arch = "wasm32"))]
             tokio_runtime: Runtime::new().unwrap(),
+            lua: Lua::new(),
+            control_handler: ControlHandler {
+                scripts: vec![],
+                generators: vec![],
+            },
+            lua_scripts: vec![],
         }
     }
 }
@@ -109,7 +118,21 @@ impl TemplateApp {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         }
 
-        Default::default()
+        let mut obj: TemplateApp = Default::default();
+
+        let paths = fs::read_dir("./lua_modules").unwrap();
+
+        for path in paths {
+            obj.lua_scripts
+                .push(path.unwrap().path().to_str().unwrap().to_string());
+        }
+
+        for script in &obj.lua_scripts {
+            println!("Loading: {:?}", script);
+            obj.control_handler.scripts.push(script.clone());
+        }
+
+        obj
     }
 
     pub fn generate_code(&mut self) {
@@ -128,6 +151,20 @@ impl TemplateApp {
         self.subsystems.iter().for_each(|subsystem| {
             includes += &subsystem.generate_includes().to_string();
         });
+
+        includes = includes
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n{}", line))
+            .collect::<String>();
+
+        let mut lua_includes = self.control_handler.generate_includes();
+        lua_includes = lua_includes
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n{}", line))
+            .collect::<String>();
+        includes += &lua_includes;
 
         // remove duplicate includes
         let mut includes_collection = includes.lines().collect::<Vec<&str>>();
@@ -148,51 +185,111 @@ impl TemplateApp {
         new_code += "\n";
         new_code += &format!(
             "public class {} extends LinearOpMode {{\n\
-                \n\tprivate ElapsedTime runtime = new ElapsedTime();\n\n",
+                \n\tprivate ElapsedTime runtime = new ElapsedTime();\n",
             &self.file_name
         );
 
         // global variables
-        new_code += &self.drivetrain.generate_globals();
+        let mut globals = self.drivetrain.generate_globals();
 
         self.subsystems.iter().for_each(|subsystem| {
-            new_code += &subsystem.generate_globals();
+            globals += &subsystem.generate_globals();
         });
 
-        new_code += "\t@Override\n\
+        globals = globals
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t{}", line))
+            .collect::<String>();
+        new_code += &globals;
+
+        let mut lua_globals = self.control_handler.generate_globals();
+        lua_globals = lua_globals
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t{}", line))
+            .collect::<String>();
+        new_code += &lua_globals;
+
+        new_code += "@Override\n\
         \tpublic void runOpMode() {\n\n\
             \t\ttelemetry.addData(\"Status\", \"Initialized\");\n\
             \t\ttelemetry.update();";
         new_code += "\n\n";
 
         // initializers
-        new_code += &self.drivetrain.generate_init();
+        let mut init = self.drivetrain.generate_init();
 
         self.subsystems.iter().for_each(|subsystem| {
-            new_code += &subsystem.generate_init();
+            init += &subsystem.generate_init();
         });
 
-        new_code += "\t\twaitForStart();\n\n\
+        init = init
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t{}", line))
+            .collect::<String>();
+        new_code += &init;
+
+        let mut lua_init = self.control_handler.generate_init();
+        lua_init = lua_init
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t{}", line))
+            .collect::<String>();
+        new_code += &lua_init;
+
+        new_code += "waitForStart();\n\n\
             \t\t// Reset the timer (stopwatch) because we only care about time since the game\n\
             \t\t// actually starts\n\
             \t\truntime.reset();\n\n\
-            \t\twhile (opModeIsActive()) {\n\n";
+            \t\twhile (opModeIsActive()) {";
 
         // loop one-time setup
-        new_code += &self.drivetrain.generate_loop_one_time_setup();
+        let mut loop_1x = self.drivetrain.generate_loop_one_time_setup();
 
         self.subsystems.iter().for_each(|subsystem| {
-            new_code += &subsystem.generate_loop_one_time_setup();
+            loop_1x += &subsystem.generate_loop_one_time_setup();
         });
+
+        loop_1x = loop_1x
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t\t{}", line))
+            .collect::<String>();
+        new_code += &loop_1x;
+
+        let mut lua_one_time_setup = self.control_handler.generate_loop_one_time_setup();
+        lua_one_time_setup = lua_one_time_setup
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t\t{}", line))
+            .collect::<String>();
+        new_code += &lua_one_time_setup;
 
         // loop
-        new_code += &self.drivetrain.generate_loop();
+        let mut _loop = self.drivetrain.generate_loop();
 
-        self.subsystems.iter().for_each(|subsystem| {
-            new_code += &subsystem.generate_loop();
+        self.subsystems.iter_mut().for_each(|subsystem| {
+            _loop += &subsystem.generate_loop();
         });
 
-        new_code += "\t\t\ttelemetry.update();\n\
+        _loop = _loop
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t\t{}", line))
+            .collect::<String>();
+        new_code += &_loop;
+
+        let mut lua_loop = self.control_handler.generate_loop();
+        lua_loop = lua_loop
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t\t{}", line))
+            .collect::<String>();
+        new_code += &lua_loop;
+
+        new_code += "\n\t\t\ttelemetry.update();\n\
                 \t\t}\n\
             \t}\n}";
 
@@ -203,10 +300,12 @@ impl TemplateApp {
 impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-
         // periodically update the UI without user interaction so build status can update
         match self.last_upload_update {
-            UploadStatus::DISCONNECTED | UploadStatus::UPLOAD_FAILED | UploadStatus::CONNECT_FAILED | UploadStatus::BUILD_FAILED => {
+            UploadStatus::DISCONNECTED
+            | UploadStatus::UPLOAD_FAILED
+            | UploadStatus::CONNECT_FAILED
+            | UploadStatus::BUILD_FAILED => {
                 ctx.request_repaint_after(std::time::Duration::from_secs(60));
             }
             _ => {
@@ -215,6 +314,8 @@ impl eframe::App for TemplateApp {
         }
 
         egui::SidePanel::right("code_panel").show(ctx, |ui| {
+            self.control_handler.render(ui);
+
             ui.heading("Generated code");
             egui::scroll_area::ScrollArea::horizontal().show(ui, |ui| {
                 egui::scroll_area::ScrollArea::vertical()
@@ -265,6 +366,56 @@ impl eframe::App for TemplateApp {
                     upload_code(code, &tx, file_name.to_owned()).await;
                 });
             }
+
+            // TODO: Should no longer add scripts to generators
+            if ui.button("Reload all lua modules").clicked() {
+                self.lua_scripts.clear();
+                self.control_handler.generators.clear();
+                self.control_handler.scripts.clear();
+
+                let paths = fs::read_dir("./lua_modules").unwrap();
+
+                for path in paths {
+                    self.lua_scripts
+                        .push(path.unwrap().path().to_str().unwrap().to_string());
+                }
+
+                for script in &self.lua_scripts {
+                    println!("Loading: {:?}", script);
+                    self.control_handler.scripts.push(script.clone());
+                }
+
+                self.drivetrain.control_handler.generators.clear();
+                self.drivetrain.control_handler.scripts.clear();
+                self.drivetrain.control_handler.scripts = self.control_handler.scripts.clone();
+
+                for subsystem in &mut self.subsystems {
+                    subsystem.control_handler.generators.clear();
+                    subsystem.control_handler.scripts.clear();
+                    subsystem.control_handler.scripts = self.control_handler.scripts.clone();
+                }
+            }
+
+            if ui.button("Load new lua modules").clicked() {
+                let paths = fs::read_dir("./lua_modules").unwrap();
+
+                for path in paths {
+                    let script = path.unwrap().path().to_str().unwrap().to_string();
+                    if !self.lua_scripts.contains(&script) {
+                        println!("Loading: {:?}", &script);
+
+                        self.lua_scripts.push(script.clone());
+
+                        self.control_handler.scripts.push(script.clone());
+
+                        self.drivetrain.control_handler.scripts.push(script.clone());
+
+                        for subsystem in &mut self.subsystems {
+                            subsystem.control_handler.scripts.push(script.clone());
+                        }
+                    }
+                }
+            }
         });
 
         #[cfg(target_arch = "wasm32")]
@@ -292,10 +443,12 @@ impl eframe::App for TemplateApp {
                         });
 
                     if ui.button("Add subsystem").clicked() {
-                        self.subsystems.push(Subsystem::new(
-                            format!("Subsystem_{}", self.subsystems.len() as i32 + 1),
-                            false,
+                        let mut subsystem = Subsystem::new(format!(
+                            "Subsystem_{}",
+                            self.subsystems.len() as i32 + 1
                         ));
+                        subsystem.control_handler.scripts = self.control_handler.scripts.clone();
+                        self.subsystems.push(subsystem);
                         self.selected_subsystem = self.subsystems.len();
                     }
                 });
@@ -331,7 +484,7 @@ impl eframe::App for TemplateApp {
                             .unwrap()
                             .name,
                     )
-                        .desired_width(100.0);
+                    .desired_width(100.0);
                     ui.add(text_edit);
                     ui.label("Rename subsystem");
                 });

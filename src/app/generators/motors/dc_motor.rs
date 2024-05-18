@@ -6,14 +6,12 @@ use super::super::generator;
 use super::motor;
 
 use crate::app::generators::{
-    self,
-    generator::GeneratorSerialize,
     keybinding::keybinding::{Axis, AxisKeybinding, BooleanButton, Keybinding},
     subsystem::subsystem::DrivetrainType,
 };
 
-use motor::*;
 use crate::app::generators::keybinding::keybinding::BooleanButton::default;
+use motor::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 pub struct DcMotor {
@@ -29,8 +27,6 @@ pub struct DcMotor {
     pub drivetrain_type: Option<DrivetrainType>,
 }
 
-impl GeneratorSerialize for DcMotor {}
-
 impl generator::Generator for DcMotor {
     fn generate_includes(&self) -> String {
         "\
@@ -43,10 +39,7 @@ impl generator::Generator for DcMotor {
     }
 
     fn generate_globals(&self) -> String {
-        let mut code = format!(
-            "\tprivate DcMotorEx {} = null;\n\n",
-            &self.name
-        );
+        let mut code = format!("\tprivate DcMotorEx {} = null;\n\n", &self.name);
 
         if self.mode == MotorMode::RUN_TO_POSITION {
             for i in 0..self.positions.len() {
@@ -75,9 +68,9 @@ impl generator::Generator for DcMotor {
             &self.name
         ) + &format!("\n\t\t{}.setTargetPosition(0);\n", &self.name)
             + &format!(
-            "\t\t{}.setMode(DcMotor.RunMode.{:?});\n\n",
-            &self.name, &self.mode
-        )
+                "\t\t{}.setMode(DcMotor.RunMode.{:?});\n\n",
+                &self.name, &self.mode
+            )
     }
 
     fn generate_loop(&self) -> String {
@@ -149,7 +142,6 @@ impl generator::Generator for DcMotor {
                 let mut default_code: String = "".into();
                 for speed_button in buttons {
                     if let Some(button) = speed_button.button {
-
                         if button == default {
                             default_code = format!("\t\t\telse {{\n\t\t\t\t {}.setPower({});\n\t\t\t}}\n\n", &self.name, &speed_button.value);
                             continue;
@@ -176,9 +168,7 @@ impl generator::Generator for DcMotor {
                 code += &default_code;
 
                 for speed_axis in &self.speeds_axis {
-
                     if let Some(axis) = speed_axis.axis {
-
                         match speed_axis.reversed {
                             true => {
                                 code += &format!(
@@ -495,32 +485,5 @@ impl DcMotor {
                     }
                 });
         });
-    }
-}
-
-impl Motor for DcMotor {}
-
-impl MotorGenerator for DcMotor {
-    fn new(name: String) -> Self {
-        DcMotor {
-            direction: generators::motors::motor::MotorDirection::FORWARD,
-            mode: generators::motors::motor::MotorMode::RUN_USING_ENCODERS,
-            max_speed: 1.0,
-            mecanum_position: MecanumPosition::FrontLeft,
-            arcade_position: ArcadePosition::Left,
-            name: name,
-            positions: vec![],
-            speeds_button: vec![],
-            speeds_axis: vec![],
-            drivetrain_type: None,
-        }
-    }
-
-    fn set_drivetrain_type(&mut self, drivetrain_type: Option<DrivetrainType>) {
-        self.drivetrain_type = drivetrain_type;
-    }
-
-    fn set_mecanum_position(&mut self, position: MecanumPosition) {
-        self.mecanum_position = position;
     }
 }

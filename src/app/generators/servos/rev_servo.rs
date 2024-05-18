@@ -6,12 +6,11 @@ use super::super::generator;
 use super::servo;
 
 use crate::app::generators::{
-    generator::GeneratorSerialize,
     keybinding::keybinding::{BooleanButton, Keybinding},
 };
 
-use servo::*;
 use crate::app::generators::keybinding::keybinding::BooleanButton::default;
+use servo::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 pub struct RevServo {
@@ -31,10 +30,7 @@ impl generator::Generator for RevServo {
     }
 
     fn generate_globals(&self) -> String {
-        let mut code = format!(
-            "\tprivate CRServo {} = null;\n\n",
-            &self.name
-        );
+        let mut code = format!("\tprivate CRServo {} = null;\n\n", &self.name);
 
         code += &"\n";
         code
@@ -64,7 +60,10 @@ impl generator::Generator for RevServo {
         for speed_button in _positions {
             if let Some(button) = speed_button.button {
                 if button == default {
-                    default_code = format!("\t\t\telse {{\n\t\t\t\t{}.setPower({});\n\t\t\t}}\n\n", &self.name, &speed_button.value);
+                    default_code = format!(
+                        "\t\t\telse {{\n\t\t\t\t{}.setPower({});\n\t\t\t}}\n\n",
+                        &self.name, &speed_button.value
+                    );
                     continue;
                 }
 
@@ -74,10 +73,7 @@ impl generator::Generator for RevServo {
                     code += "else "
                 }
 
-                code += &format!(
-                    "if (gamepad1.{:?}) {{\n",
-                    &button
-                );
+                code += &format!("if (gamepad1.{:?}) {{\n", &button);
 
                 code += &format!("\t\t\t\t{}.setPower({});\n", self.name, &speed_button.value);
 
@@ -188,20 +184,5 @@ impl RevServo {
                 self.positions.push(Keybinding::new(0.0));
             }
         });
-    }
-}
-
-impl GeneratorSerialize for RevServo {}
-
-impl Servo for RevServo {}
-
-impl ServoGenerator for RevServo {
-    fn new(name: String) -> Self {
-        RevServo {
-            direction: ServoDirection::FORWARD,
-            mode: ServoMode::Servo,
-            name: name,
-            positions: vec![],
-        }
     }
 }
