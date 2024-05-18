@@ -1,10 +1,12 @@
+use crate::app::generators::control::Control;
+use crate::app::generators::ui_elements::{
+    ButtonInput, CheckboxInput, ComboBoxInput, Slider, TextInput,
+};
+use egui::Ui;
+use mlua::prelude::LuaError;
+use mlua::{Function, Lua, Table, UserData, UserDataMethods};
 use std::fs::File;
 use std::io::Read;
-use egui::Ui;
-use mlua::{Function, Lua, Table, UserData, UserDataMethods};
-use mlua::prelude::LuaError;
-use crate::app::generators::control::{Control};
-use crate::app::generators::ui_elements::{ButtonInput, CheckboxInput, ComboBoxInput, Slider, TextInput};
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct ControlHandler {
@@ -44,14 +46,21 @@ impl ControlHandler {
         self.render_controls(ui);
     }
 
-    pub fn add_controls(&mut self)
-    {
+    pub fn add_controls(&mut self) {
         let mut i = 0;
         for generator in &mut self.generators {
             let mut new_controls = vec![];
 
-            let get_controls: Function<'_> = generator.lua.globals().get("get_controls").expect("Lua scripts must contain a 'get_controls' method!");
-            let controls_changed: Function<'_> = generator.lua.globals().get("controls_changed").expect("Lua scripts must contain a 'controls_changed' method!");
+            let get_controls: Function<'_> = generator
+                .lua
+                .globals()
+                .get("get_controls")
+                .expect("Lua scripts must contain a 'get_controls' method!");
+            let controls_changed: Function<'_> = generator
+                .lua
+                .globals()
+                .get("controls_changed")
+                .expect("Lua scripts must contain a 'controls_changed' method!");
 
             let changed = controls_changed.call::<_, bool>(()).unwrap();
 
@@ -65,12 +74,11 @@ impl ControlHandler {
 
             let table = get_controls.call::<_, Table<'_>>(()).unwrap();
 
-            table.for_each(|k: String,
-                            v: Table<'_>| {
-                i += 1;
-                match v.raw_get::<i32, String>(1) {
-                    Ok(s) => {
-                        match s.as_str() {
+            table
+                .for_each(|k: String, v: Table<'_>| {
+                    i += 1;
+                    match v.raw_get::<i32, String>(1) {
+                        Ok(s) => match s.as_str() {
                             "Slider" => {
                                 let control = Control::SliderType(Slider {
                                     name: v.raw_get::<i32, String>(2).unwrap(),
@@ -98,8 +106,12 @@ impl ControlHandler {
                                 let mut entries = vec![];
                                 for i in 5..50 {
                                     match v.raw_get::<i32, String>(i) {
-                                        Ok(s) => { entries.push(s); }
-                                        Err(_) => { break; }
+                                        Ok(s) => {
+                                            entries.push(s);
+                                        }
+                                        Err(_) => {
+                                            break;
+                                        }
                                     }
                                 }
 
@@ -142,69 +154,76 @@ impl ControlHandler {
                                 new_controls.push(control);
                             }
                             _ => {}
-                        }
+                        },
+                        Err(_) => {}
                     }
-                    Err(_) => {}
-                }
 
-                Ok(())
-            }).expect("Failed to parse table");
+                    Ok(())
+                })
+                .expect("Failed to parse table");
 
             generator.controls.append(&mut new_controls);
         }
     }
 
-    pub fn tick_lua(&mut self)
-    {
-        for generator in &mut self.generators
-        {
+    pub fn tick_lua(&mut self) {
+        for generator in &mut self.generators {
             generator.load();
             for control in &generator.controls {
-                generator.lua.globals().set(control.get_name(), control.clone()).unwrap();
+                generator
+                    .lua
+                    .globals()
+                    .set(control.get_name(), control.clone())
+                    .unwrap();
             }
-            let _ = generator.lua.globals().get("tick").and_then(|tick: Function<'_>| {
-                tick.call::<_, ()>(()).unwrap();
-                Ok(())
-            });
+            let _ = generator
+                .lua
+                .globals()
+                .get("tick")
+                .and_then(|tick: Function<'_>| {
+                    tick.call::<_, ()>(()).unwrap();
+                    Ok(())
+                });
         }
     }
 
-    pub fn render_controls(&mut self, ui: &mut Ui)
-    {
+    pub fn render_controls(&mut self, ui: &mut Ui) {
         let mut removed_generators = vec![];
 
         egui::Grid::new("Controls Grid").show(ui, |ui| {
             let mut last_generator_type = "".to_string();
 
             let mut i = 0;
-            self.generators.iter_mut().enumerate().for_each(|(id, generator)| {
-                if last_generator_type == "" {
-                    last_generator_type = generator.script.clone();
-                }
-
-                // new control types go to new rows
-                if &last_generator_type != &generator.script {
-                    last_generator_type = generator.script.clone();
-                    i = 0;
-                    ui.end_row();
-                }
-
-                // otherwise two controls per row
-                else if i % 2 == 0 {
-                    ui.end_row();
-                }
-
-                ui.vertical(|ui| {
-                    for control in &mut generator.controls {
-                        control.render(ui, &generator.lua);
+            self.generators
+                .iter_mut()
+                .enumerate()
+                .for_each(|(id, generator)| {
+                    if last_generator_type == "" {
+                        last_generator_type = generator.script.clone();
                     }
-                    if ui.button("Remove component").clicked() {
-                        removed_generators.push(id);
+
+                    // new control types go to new rows
+                    if &last_generator_type != &generator.script {
+                        last_generator_type = generator.script.clone();
+                        i = 0;
+                        ui.end_row();
                     }
+                    // otherwise two controls per row
+                    else if i % 2 == 0 {
+                        ui.end_row();
+                    }
+
+                    ui.vertical(|ui| {
+                        for control in &mut generator.controls {
+                            control.render(ui, &generator.lua);
+                        }
+                        if ui.button("Remove component").clicked() {
+                            removed_generators.push(id);
+                        }
+                    });
+
+                    i = i + 1;
                 });
-
-                i = i + 1;
-            });
         });
 
         for generator in removed_generators {
@@ -216,7 +235,8 @@ impl ControlHandler {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
-            let func: Result::<Function<'_>, LuaError> = generator.lua.globals().get("generate_includes");
+            let func: Result<Function<'_>, LuaError> =
+                generator.lua.globals().get("generate_includes");
 
             if let Ok(f) = func {
                 code += &*f.call::<_, String>(()).unwrap();
@@ -229,7 +249,7 @@ impl ControlHandler {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
-            let func: Result::<Function<'_>, LuaError> = generator.lua.globals().get("generate_init");
+            let func: Result<Function<'_>, LuaError> = generator.lua.globals().get("generate_init");
 
             if let Ok(f) = func {
                 code += &*f.call::<_, String>(()).unwrap();
@@ -242,7 +262,8 @@ impl ControlHandler {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
-            let func: Result::<Function<'_>, LuaError> = generator.lua.globals().get("generate_globals");
+            let func: Result<Function<'_>, LuaError> =
+                generator.lua.globals().get("generate_globals");
 
             if let Ok(f) = func {
                 code += &*f.call::<_, String>(()).unwrap();
@@ -255,7 +276,8 @@ impl ControlHandler {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
-            let func: Result::<Function<'_>, LuaError> = generator.lua.globals().get("generate_loop_one_time_setup");
+            let func: Result<Function<'_>, LuaError> =
+                generator.lua.globals().get("generate_loop_one_time_setup");
 
             if let Ok(f) = func {
                 code += &*f.call::<_, String>(()).unwrap();
@@ -268,7 +290,7 @@ impl ControlHandler {
         let mut code: String = "".to_string();
 
         for generator in &self.generators {
-            let func: Result::<Function<'_>, LuaError> = generator.lua.globals().get("generate_loop");
+            let func: Result<Function<'_>, LuaError> = generator.lua.globals().get("generate_loop");
 
             if let Ok(f) = func {
                 code += &*f.call::<_, String>(()).unwrap();
@@ -326,8 +348,7 @@ impl LuaGenerator {
 
         self.lua.load(&self.script_data).exec().unwrap();
     }
-    pub fn render(&mut self)
-    {
+    pub fn render(&mut self) {
         self.load();
         return;
     }

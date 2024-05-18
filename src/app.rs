@@ -1,5 +1,5 @@
-use std::fs;
 use crate::app::generators::generator::Generator;
+use std::fs;
 
 pub mod generators;
 
@@ -7,17 +7,17 @@ use self::generators::generator::SubsystemGenerator;
 use self::generators::subsystem::subsystem::Subsystem;
 use self::theme::Theme;
 
-use std::fs::File;
-use std::io::{Write};
-use std::path::PathBuf;
 use mlua::Lua;
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
 use tokio::sync::{mpsc, mpsc::unbounded_channel};
 
+use crate::app::generators::lua_generator::ControlHandler;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::runtime::Runtime;
-use crate::app::generators::lua_generator::{ControlHandler};
 
 pub mod syntax_highlighting;
 
@@ -51,7 +51,7 @@ pub struct TemplateApp {
     #[serde(skip)]
     lua: Lua,
     control_handler: ControlHandler,
-    lua_scripts: Vec::<String>,
+    lua_scripts: Vec<String>,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
@@ -92,7 +92,10 @@ impl Default for TemplateApp {
             #[cfg(not(target_arch = "wasm32"))]
             tokio_runtime: Runtime::new().unwrap(),
             lua: Lua::new(),
-            control_handler: ControlHandler { scripts: vec![], generators: vec![] },
+            control_handler: ControlHandler {
+                scripts: vec![],
+                generators: vec![],
+            },
             lua_scripts: vec![],
         }
     }
@@ -113,7 +116,6 @@ impl TemplateApp {
         // Note that you must enable the `persistence` feature for this to work.
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-
         }
 
         let mut obj: TemplateApp = Default::default();
@@ -121,7 +123,8 @@ impl TemplateApp {
         let paths = fs::read_dir("./lua_modules").unwrap();
 
         for path in paths {
-            obj.lua_scripts.push(path.unwrap().path().to_str().unwrap().to_string());
+            obj.lua_scripts
+                .push(path.unwrap().path().to_str().unwrap().to_string());
         }
 
         for script in &obj.lua_scripts {
@@ -149,10 +152,18 @@ impl TemplateApp {
             includes += &subsystem.generate_includes().to_string();
         });
 
-        includes = includes.to_string().split("\n").map(|line| { format!("\n{}", line) }).collect::<String>();
+        includes = includes
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n{}", line))
+            .collect::<String>();
 
         let mut lua_includes = self.control_handler.generate_includes();
-        lua_includes = lua_includes.to_string().split("\n").map(|line| { format!("\n{}", line) }).collect::<String>();
+        lua_includes = lua_includes
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n{}", line))
+            .collect::<String>();
         includes += &lua_includes;
 
         // remove duplicate includes
@@ -185,11 +196,19 @@ impl TemplateApp {
             globals += &subsystem.generate_globals();
         });
 
-        globals = globals.to_string().split("\n").map(|line| { format!("\n\t{}", line) }).collect::<String>();
+        globals = globals
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t{}", line))
+            .collect::<String>();
         new_code += &globals;
 
         let mut lua_globals = self.control_handler.generate_globals();
-        lua_globals = lua_globals.to_string().split("\n").map(|line| { format!("\n\t{}", line) }).collect::<String>();
+        lua_globals = lua_globals
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t{}", line))
+            .collect::<String>();
         new_code += &lua_globals;
 
         new_code += "@Override\n\
@@ -205,11 +224,19 @@ impl TemplateApp {
             init += &subsystem.generate_init();
         });
 
-        init = init.to_string().split("\n").map(|line| { format!("\n\t\t{}", line) }).collect::<String>();
+        init = init
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t{}", line))
+            .collect::<String>();
         new_code += &init;
 
         let mut lua_init = self.control_handler.generate_init();
-        lua_init = lua_init.to_string().split("\n").map(|line| { format!("\n\t\t{}", line) }).collect::<String>();
+        lua_init = lua_init
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t{}", line))
+            .collect::<String>();
         new_code += &lua_init;
 
         new_code += "waitForStart();\n\n\
@@ -225,11 +252,19 @@ impl TemplateApp {
             loop_1x += &subsystem.generate_loop_one_time_setup();
         });
 
-        loop_1x = loop_1x.to_string().split("\n").map(|line| { format!("\n\t\t\t{}", line) }).collect::<String>();
+        loop_1x = loop_1x
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t\t{}", line))
+            .collect::<String>();
         new_code += &loop_1x;
 
         let mut lua_one_time_setup = self.control_handler.generate_loop_one_time_setup();
-        lua_one_time_setup = lua_one_time_setup.to_string().split("\n").map(|line| { format!("\n\t\t\t{}", line) }).collect::<String>();
+        lua_one_time_setup = lua_one_time_setup
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t\t{}", line))
+            .collect::<String>();
         new_code += &lua_one_time_setup;
 
         // loop
@@ -239,11 +274,19 @@ impl TemplateApp {
             _loop += &subsystem.generate_loop();
         });
 
-        _loop = _loop.to_string().split("\n").map(|line| { format!("\n\t\t\t{}", line) }).collect::<String>();
+        _loop = _loop
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t\t{}", line))
+            .collect::<String>();
         new_code += &_loop;
 
         let mut lua_loop = self.control_handler.generate_loop();
-        lua_loop = lua_loop.to_string().split("\n").map(|line| { format!("\n\t\t\t{}", line) }).collect::<String>();
+        lua_loop = lua_loop
+            .to_string()
+            .split("\n")
+            .map(|line| format!("\n\t\t\t{}", line))
+            .collect::<String>();
         new_code += &lua_loop;
 
         new_code += "\n\t\t\ttelemetry.update();\n\
@@ -257,10 +300,12 @@ impl TemplateApp {
 impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-
         // periodically update the UI without user interaction so build status can update
         match self.last_upload_update {
-            UploadStatus::DISCONNECTED | UploadStatus::UPLOAD_FAILED | UploadStatus::CONNECT_FAILED | UploadStatus::BUILD_FAILED => {
+            UploadStatus::DISCONNECTED
+            | UploadStatus::UPLOAD_FAILED
+            | UploadStatus::CONNECT_FAILED
+            | UploadStatus::BUILD_FAILED => {
                 ctx.request_repaint_after(std::time::Duration::from_secs(60));
             }
             _ => {
@@ -331,7 +376,8 @@ impl eframe::App for TemplateApp {
                 let paths = fs::read_dir("./lua_modules").unwrap();
 
                 for path in paths {
-                    self.lua_scripts.push(path.unwrap().path().to_str().unwrap().to_string());
+                    self.lua_scripts
+                        .push(path.unwrap().path().to_str().unwrap().to_string());
                 }
 
                 for script in &self.lua_scripts {
@@ -397,9 +443,10 @@ impl eframe::App for TemplateApp {
                         });
 
                     if ui.button("Add subsystem").clicked() {
-                        let mut subsystem = Subsystem::new(
-                            format!("Subsystem_{}", self.subsystems.len() as i32 + 1),
-                        );
+                        let mut subsystem = Subsystem::new(format!(
+                            "Subsystem_{}",
+                            self.subsystems.len() as i32 + 1
+                        ));
                         subsystem.control_handler.scripts = self.control_handler.scripts.clone();
                         self.subsystems.push(subsystem);
                         self.selected_subsystem = self.subsystems.len();
@@ -437,7 +484,7 @@ impl eframe::App for TemplateApp {
                             .unwrap()
                             .name,
                     )
-                        .desired_width(100.0);
+                    .desired_width(100.0);
                     ui.add(text_edit);
                     ui.label("Rename subsystem");
                 });

@@ -12,8 +12,8 @@ use crate::app::generators::{
     subsystem::subsystem::DrivetrainType,
 };
 
-use motor::*;
 use crate::app::generators::keybinding::keybinding::BooleanButton::default;
+use motor::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 pub struct DcMotor {
@@ -43,10 +43,7 @@ impl generator::Generator for DcMotor {
     }
 
     fn generate_globals(&self) -> String {
-        let mut code = format!(
-            "\tprivate DcMotorEx {} = null;\n\n",
-            &self.name
-        );
+        let mut code = format!("\tprivate DcMotorEx {} = null;\n\n", &self.name);
 
         if self.mode == MotorMode::RUN_TO_POSITION {
             for i in 0..self.positions.len() {
@@ -75,9 +72,9 @@ impl generator::Generator for DcMotor {
             &self.name
         ) + &format!("\n\t\t{}.setTargetPosition(0);\n", &self.name)
             + &format!(
-            "\t\t{}.setMode(DcMotor.RunMode.{:?});\n\n",
-            &self.name, &self.mode
-        )
+                "\t\t{}.setMode(DcMotor.RunMode.{:?});\n\n",
+                &self.name, &self.mode
+            )
     }
 
     fn generate_loop(&self) -> String {

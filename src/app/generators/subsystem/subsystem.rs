@@ -1,11 +1,9 @@
-use crate::app::generators::{
-    generator::{self, SubsystemGenerator},
-};
-use strum_macros::EnumIter;
+use crate::app::generators::generator::{self, SubsystemGenerator};
 use crate::app::generators::lua_generator::{ControlHandler, LuaGenerator};
+use strum_macros::EnumIter;
 
 #[derive(
-Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, EnumIter, PartialOrd, Copy,
+    Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, EnumIter, PartialOrd, Copy,
 )]
 pub enum DrivetrainType {
     Mecanum,
@@ -14,16 +12,13 @@ pub enum DrivetrainType {
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct Subsystem
-{
+pub struct Subsystem {
     pub name: String,
     pub control_handler: ControlHandler,
     pub selected_control: String,
 }
 
-impl
-generator::Generator for Subsystem
-{
+impl generator::Generator for Subsystem {
     fn generate_includes(&self) -> String {
         let mut code: String = "".to_owned();
 
@@ -51,7 +46,10 @@ generator::Generator for Subsystem
     fn generate_loop_one_time_setup(&self) -> String {
         let mut code: String = "".to_owned();
 
-        code += &*self.control_handler.generate_loop_one_time_setup().to_string();
+        code += &*self
+            .control_handler
+            .generate_loop_one_time_setup()
+            .to_string();
 
         code
     }
@@ -75,7 +73,8 @@ generator::Generator for Subsystem
                     .width(170.0)
                     .show_ui(ui, |ui| {
                         for script in &self.control_handler.scripts {
-                            let script_name = script.split("/").last().unwrap().split(".").nth(0).unwrap();
+                            let script_name =
+                                script.split("/").last().unwrap().split(".").nth(0).unwrap();
                             ui.selectable_value(
                                 &mut self.selected_control,
                                 script.clone(),
@@ -97,20 +96,20 @@ generator::Generator for Subsystem
     }
 }
 
-impl
-SubsystemGenerator for Subsystem
-{
+impl SubsystemGenerator for Subsystem {
     fn get_name(&self) -> String {
         self.name.to_string()
     }
 }
 
-impl Subsystem
-{
+impl Subsystem {
     pub fn new(name: String) -> Self {
         Subsystem {
             name: name.to_string(),
-            control_handler: ControlHandler { scripts: vec![], generators: vec![] },
+            control_handler: ControlHandler {
+                scripts: vec![],
+                generators: vec![],
+            },
             selected_control: "".to_string(),
         }
     }
