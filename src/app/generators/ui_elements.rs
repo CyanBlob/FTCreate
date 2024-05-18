@@ -46,7 +46,7 @@ pub struct ButtonInput {
 }
 
 impl UiElement for Slider {
-    fn render(&mut self, ui: &mut Ui, lua: Option<&Lua>) {
+    fn render(&mut self, ui: &mut Ui, _lua: Option<&Lua>) {
         ui.add(
             egui::Slider::new(&mut self.value, RangeInclusive::new(self.min, self.max))
                 .text(&self.label)
@@ -57,13 +57,13 @@ impl UiElement for Slider {
 }
 
 impl UiElement for TextInput {
-    fn render(&mut self, ui: &mut Ui, lua: Option<&Lua>) {
+    fn render(&mut self, ui: &mut Ui, _lua: Option<&Lua>) {
         ui.text_edit_singleline(&mut self.value);
     }
 }
 
 impl UiElement for ComboBoxInput {
-    fn render(&mut self, ui: &mut Ui, lua: Option<&Lua>) {
+    fn render(&mut self, ui: &mut Ui, _lua: Option<&Lua>) {
         egui::ComboBox::new(
             format!("{}{}{}", &self.name, &self.label, &self.id),
             &self.label,

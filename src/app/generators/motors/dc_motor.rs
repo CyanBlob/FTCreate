@@ -6,8 +6,6 @@ use super::super::generator;
 use super::motor;
 
 use crate::app::generators::{
-    self,
-    generator::GeneratorSerialize,
     keybinding::keybinding::{Axis, AxisKeybinding, BooleanButton, Keybinding},
     subsystem::subsystem::DrivetrainType,
 };
@@ -28,8 +26,6 @@ pub struct DcMotor {
     pub speeds_axis: Vec<AxisKeybinding>,
     pub drivetrain_type: Option<DrivetrainType>,
 }
-
-impl GeneratorSerialize for DcMotor {}
 
 impl generator::Generator for DcMotor {
     fn generate_includes(&self) -> String {
@@ -489,32 +485,5 @@ impl DcMotor {
                     }
                 });
         });
-    }
-}
-
-impl Motor for DcMotor {}
-
-impl MotorGenerator for DcMotor {
-    fn new(name: String) -> Self {
-        DcMotor {
-            direction: generators::motors::motor::MotorDirection::FORWARD,
-            mode: generators::motors::motor::MotorMode::RUN_USING_ENCODERS,
-            max_speed: 1.0,
-            mecanum_position: MecanumPosition::FrontLeft,
-            arcade_position: ArcadePosition::Left,
-            name: name,
-            positions: vec![],
-            speeds_button: vec![],
-            speeds_axis: vec![],
-            drivetrain_type: None,
-        }
-    }
-
-    fn set_drivetrain_type(&mut self, drivetrain_type: Option<DrivetrainType>) {
-        self.drivetrain_type = drivetrain_type;
-    }
-
-    fn set_mecanum_position(&mut self, position: MecanumPosition) {
-        self.mecanum_position = position;
     }
 }

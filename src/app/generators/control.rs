@@ -2,10 +2,7 @@ use crate::app::generators::ui_elements::{
     ButtonInput, CheckboxInput, ComboBoxInput, Slider, TextInput,
 };
 use egui::Ui;
-use mlua::prelude::LuaUserData;
 use mlua::{Lua, UserData, UserDataFields};
-
-pub trait SizedUserData: LuaUserData + Sized {}
 
 pub trait UiElement {
     fn render(&mut self, ui: &mut Ui, lua: Option<&Lua>);

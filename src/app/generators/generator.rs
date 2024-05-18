@@ -22,8 +22,6 @@ pub trait Generator {
     fn render_options(&mut self, ui: &mut egui::Ui, id: usize);
 }
 
-pub trait GeneratorSerialize: serde::Serialize + Generator {}
-
 pub trait SubsystemGenerator {
     fn get_name(&self) -> String {
         "Subsystem".to_string()

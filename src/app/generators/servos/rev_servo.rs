@@ -6,7 +6,6 @@ use super::super::generator;
 use super::servo;
 
 use crate::app::generators::{
-    generator::GeneratorSerialize,
     keybinding::keybinding::{BooleanButton, Keybinding},
 };
 
@@ -185,20 +184,5 @@ impl RevServo {
                 self.positions.push(Keybinding::new(0.0));
             }
         });
-    }
-}
-
-impl GeneratorSerialize for RevServo {}
-
-impl Servo for RevServo {}
-
-impl ServoGenerator for RevServo {
-    fn new(name: String) -> Self {
-        RevServo {
-            direction: ServoDirection::FORWARD,
-            mode: ServoMode::Servo,
-            name: name,
-            positions: vec![],
-        }
     }
 }
